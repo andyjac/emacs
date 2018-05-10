@@ -1,0 +1,504 @@
+#+TITLE: Emacs Config
+#+AUTHOR: Andrew Jacobson
+#+STARTUP: indent
+
+* Introduction
+
+This is my emacs config. There are many like it, but this one is mine.
+
+* Personal Info
+
+In case my emacs config gets lost.
+
+#+BEGIN_SRC emacs-lisp
+  (setq user-full-name "Andrew Jacobson"
+        user-mail-address "andrew.isaac.jacobson@gmail.com")
+#+END_SRC
+
+* Custom File
+
+Load the auto-generated customizations file from the dotemacs dir.
+
+#+BEGIN_SRC emacs-lisp
+  (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+  (load custom-file)
+#+END_SRC
+
+* Basic Configuration
+** Require newline at EOF
+
+#+BEGIN_SRC emacs-lisp
+  (setq require-final-newline t)
+  (setq require-trailing-newline t)
+#+END_SRC
+
+** Allow 'y' or 'n' answers
+
+Typing 'yes' or 'no' is tedious.
+
+#+BEGIN_SRC emacs-lisp
+  (defalias 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+** Set backup directory
+
+Set backup and auto-save-list directories.
+
+#+BEGIN_SRC emacs-lisp
+  (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+  (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+#+END_SRC
+
+** Set UTF-8
+
+UTF-8. UTF-8 everywhere.
+
+#+BEGIN_SRC emacs-lisp
+  (setq locale-coding-system   'utf-8)
+  (set-terminal-coding-system  'utf-8)
+  (set-keyboard-coding-system  'utf-8)
+  (set-selection-coding-system 'utf-8)
+  (prefer-coding-system        'utf-8)
+#+END_SRC
+
+** Remove cursor blink
+
+The cursor blink annoys me. This makes it stop.
+
+#+BEGIN_SRC emacs-lisp
+  (blink-cursor-mode -1)
+#+END_SRC
+
+** Tabs
+
+Prevent tab indentation and set default tab-width.
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 2)
+  (setq-default indicate-empty-lines t)
+#+END_SRC
+
+** Show matching parens
+
+Highlight opening/closing paren when cursor is on/after opening/closing paren respectively.
+
+#+BEGIN_SRC emacs-lisp
+  (show-paren-mode t)
+#+END_SRC
+
+** Delete region when typing
+
+This allows me to type over a selected region, which is nice.
+
+#+BEGIN_SRC emacs-lisp
+  (delete-selection-mode t)
+#+END_SRC
+
+** No bell
+
+Turn off audible and visual bell since it is annoying.
+
+#+BEGIN_SRC emacs-lisp
+  (setq visible-bell nil)
+  (setq ring-bell-function 'ignore)
+#+END_SRC
+
+** Show column info
+
+#+BEGIN_SRC emacs-lisp
+  (column-number-mode t)
+#+END_SRC
+
+** Display line numbers
+
+Turn on linum mode globally.
+
+#+BEGIN_SRC emacs-lisp
+  (global-linum-mode)
+  (diminish 'linum-mode)
+#+END_SRC
+
+** Use line wrapping
+
+#+BEGIN_SRC emacs-lisp
+  (global-visual-line-mode)
+  (diminish 'visual-line-mode)
+#+END_SRC
+
+** Highlight current line
+
+Highlight the line that the cursor is currently on.
+
+#+BEGIN_SRC emacs-lisp
+  (global-hl-line-mode t)
+#+END_SRC
+
+** Delete trailing whitespace on save
+
+Clean up superfluous whitespace in buffer on save.
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+#+END_SRC
+
+** Make it easy to edit this file
+
+Setup keybinding to quickly navigate to this file.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/find-config ()
+    "Edit config.org"
+    (interactive)
+    (find-file "~/.emacs.d/config.org"))
+
+  (bind-key "C-c c" 'aj/find-config)
+#+END_SRC
+
+* OSX
+
+Stuff for MacOS.
+
+#+BEGIN_SRC emacs-lisp
+  (when (string-equal system-type 'darwin)
+    ;; Make sure alt and meta are setup
+    (setq mac-option-modifier 'alt)
+    (setq mac-command-modifier 'meta)
+
+    ;; Avoid sending meta keystrokes to the os
+    (setq mac-pass-command-to-system nil)
+
+    ;; Quiet `ls does not support --dired' error
+    (setq dired-use-ls-dired nil)
+
+    ;; Fullscreen
+    (setq ns-use-native-fullscreen nil))
+#+END_SRC
+
+* Global Keybindings
+
+Some globally useful keybindings.
+
+#+BEGIN_SRC emacs-lisp
+  ;; allow C-j to be used in place of C-x
+  (define-key key-translation-map "\C-j" "\C-x")
+
+  ;; make room for user prefix
+  (bind-key "M-j" nil)
+
+  (bind-key "C-S-y" 'kill-ring-search)
+  (bind-key "C-S-j" (lambda () (interactive) (join-line -1)))
+  (bind-key "C-S-SPC" 'exchange-point-and-mark)
+  (bind-key "C-x C-/" 'comment-region)
+  (bind-key "C-x C-;" 'uncomment-region)
+  (bind-key "C-x C-d"  'dired-jump)
+#+END_SRC
+
+* Look & Feel
+** Font
+*** Tell emacs to use [[http://adobe-fonts.github.io/source-code-pro/][Source Code Pro]] as default font
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'default-frame-alist '(font . "Source Code Pro-14"))
+#+END_SRC
+
+*** Enable emojis :)
+
+#+BEGIN_SRC emacs-lisp
+  (let ((font (if (= emacs-major-version 25)
+                  "Symbola"
+                (cond ((string-equal system-type "darwin") "Apple Color Emoji")
+                      ((string-equal system-type "gnu/linux") "Symbola")))))
+    (set-fontset-font t 'unicode font nil 'prepend))
+#+END_SRC
+
+** Theme
+
+#+BEGIN_SRC emacs-lisp
+  (use-package color-theme-sanityinc-tomorrow
+    :ensure t
+    :config (load-theme 'sanityinc-tomorrow-night t))
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (use-package noctilux-theme
+    :ensure t)
+#+END_SRC
+
+* Editing & Movement
+** Packages
+
+[[https://github.com/wyuenho/move-dup][move-dup]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package move-dup
+    :ensure t
+    :bind (("C-S-p" . md/move-lines-up)
+           ("C-S-n" . md/move-lines-down)
+           ("M-P"   . md/duplicate-up)
+           ("M-N"   . md/duplicate-down)))
+#+END_SRC
+
+** Functions
+
+Indent and open newline.
+
+#+BEGIN_SRC emacs-lisp
+  (defun indent-and-open-newline (&optional previous)
+    "Add a newline after current line and tab to indentation.
+    If PREVIOUS is non-nil, go up a line first."
+    (interactive)
+    (if previous
+        (previous-line))
+    (end-of-line)
+    (newline)
+    (indent-for-tab-command))
+#+END_SRC
+
+Previous indent and open newline.
+
+#+BEGIN_SRC emacs-lisp
+  (defun previous-indent-and-open-newline ()
+    "Call indent-and-open-newline with non-nil PREVIOUS value"
+    (interactive)
+    (indent-and-open-newline t))
+#+END_SRC
+
+Indent buffer.
+
+#+BEGIN_SRC emacs-lisp
+  (defun indent-buffer ()
+    "Fix indentation on the entire buffer."
+    (interactive)
+    (save-excursion
+      (indent-region (point-min) (point-max))))
+#+END_SRC
+
+** Keybindings
+
+#+BEGIN_SRC emacs-lisp
+  (bind-key "M-o" 'indent-and-open-newline)
+  (bind-key "C-o" 'previous-indent-and-open-newline)
+  (bind-key "C-," 'indent-buffer)
+  (bind-key "M-z" 'zap-up-to-char)
+  (bind-key "M-F" 'forward-to-word)
+  (bind-key "M-B" 'backward-to-word)
+#+END_SRC
+
+* Frames, Windows & Buffers
+** Functions
+*** Next frame in window
+
+Helper function that moves to the next window of the current frame.
+Essentially a simplified version of =other-window= (C-x o).
+
+#+BEGIN_SRC emacs-lisp
+  (defun next-frame-in-window ()
+    "Jump to next window in current frame"
+    (interactive)
+    (select-window (next-window)))
+#+END_SRC
+
+*** Previous frame in window
+
+Helper function that moves to the previous window of the current frame.
+
+#+BEGIN_SRC emacs-lisp
+  (defun previous-frame-in-window ()
+    "Jump to previous window in current frame"
+    (interactive)
+    (select-window (previous-window)))
+#+END_SRC
+
+*** Rotate windows in frame
+
+Helper function that rotates the windows of the current frame in a
+counter-clockwise direction.
+
+#+BEGIN_SRC emacs-lisp
+  (defun rotate-windows-in-frame ()
+    (interactive)
+    (let ((map
+           (mapcar
+            (lambda (window)
+              `(,window
+                ,(window-buffer
+                  (next-window window))))
+            (window-list))))
+      (mapcar
+       (lambda (window-to-buffer)
+         (let ((window (car window-to-buffer))
+               (buffer (cadr window-to-buffer)))
+           (select-window window)
+           (switch-to-buffer buffer))) map)))
+#+END_SRC
+
+*** Kill focused buffer
+
+Helper function that kills the currently focused buffer. Pretty self explanatory.
+
+#+BEGIN_SRC emacs-lisp
+  (defun kill-focused-buffer ()
+    (interactive)
+    (kill-buffer (current-buffer)))
+#+END_SRC
+
+** Keybindings
+
+#+BEGIN_SRC emacs-lisp
+  (bind-key "<M-return>" 'toggle-frame-fullscreen)
+  (bind-key "C-S-b"      'bury-buffer)
+  (bind-key "C-S-f"      'unbury-buffer)
+  (bind-key "C-x C-b"    'ibuffer)
+  (bind-key "M-j l"      'next-frame-in-window)
+  (bind-key "M-j h"      'previous-frame-in-window)
+  (bind-key "C-|"        'rotate-windows-in-frame)
+  (bind-key "C-x C-k"    'kill-focused-buffer)
+#+END_SRC
+
+* Dired
+** Packages
+*** [[https://github.com/juan-leon/dired-efap][dired-efap]]
+
+dired-efap allows me to edit a filename in place while in a dired buffer.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package dired-efap
+    :ensure t
+    :config (setq dired-efap-initial-filename-selection nil))
+#+END_SRC
+
+** Hooks
+
+Setup dired-mode-hook.
+
+#+begin_SRC emacs-lisp
+  (defun aj/dired-mode-hook ()
+    "Setup dired-mode-hook"
+    (define-key dired-mode-map (kbd "<backspace>") 'dired-up-directory)
+    (define-key dired-mode-map (kbd "e") 'dired-efap))
+
+  (add-hook 'dired-mode-hook 'aj/dired-mode-hook)
+#+END_SRC
+
+* Discoverability
+** Packages
+*** [[https://github.com/abo-abo/swiper][ivy]]
+
+Install and setup ivy/swiper/counsel for discoverability completion.
+
+#+BEGIN_SRC emacs-lisp
+  (defun andrew/configure-ivy ()
+    "Configure ivy-mode"
+    (ivy-mode 1)
+    ;; add ‘recentf-mode’ and bookmarks to ‘ivy-switch-buffer’.
+    (setq ivy-use-virtual-buffers t)
+    ;; number of result lines to display
+    (setq ivy-height 10)
+    ;; does not count candidates
+    (setq ivy-count-format "")
+    ;; no regexp by default
+    (setq ivy-initial-inputs-alist nil)
+    ;; configure regexp engine.
+    (setq ivy-re-builders-alist
+          ;; allow input not in order
+          '((t . ivy--regex-ignore-order))))
+
+  (use-package counsel :ensure t)
+  (use-package swiper :ensure t)
+
+  (use-package ivy
+    :ensure t
+    :diminish (ivy-mode . "")
+    :bind (("C-s" . swiper)
+           ("C-r" . swiper)
+           ("M-x" . counsel-M-x))
+    :config (andrew/configure-ivy))
+#+END_SRC
+
+* Completion
+** Packages
+*** [[http://company-mode.github.io/][company-mode]]
+
+Install and enable [[http://company-mode.github.io/][company-mode]] globally.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package company
+    :ensure t
+    :config (global-company-mode))
+#+END_SRC
+
+* Programming
+** General
+*** Packages
+**** [[https://magit.vc/][magit]]
+
+Magit is an amazing git porcelain! Let's install it and set it up.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/configure-magit ()
+    "Do magit configuration"
+    (setq magit-completing-read          'ivy-completing-read)
+    (setq magit-completing-read-function 'ivy-completing-read))
+
+  (use-package magit
+    :ensure t
+    :config (aj/configure-magit)
+    :bind (("M-j g" . magit-status)))
+#+END_SRC
+
+**** [[https://github.com/tsdh/highlight-parentheses.el][highlight-parentheses]]
+
+Gives nice highlighting for parens that your cursor is currently inside of.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package highlight-parentheses
+    :ensure t
+    :config (global-highlight-parentheses-mode))
+#+END_SRC
+
+**** [[https://github.com/Fuco1/smartparens][smartparens]]
+
+Install and setup smartparens to behave similarly to paredit.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package smartparens
+    :ensure t
+    :config (require 'smartparens-config)
+    :bind (("C-M-a" . sp-beginning-of-sexp)
+           ("C-M-e" . sp-end-of-sexp)
+           ("C-M-p" . sp-up-sexp)
+           ("C-M-n" . sp-down-sexp)
+           ("C-M-f" . sp-forward-sexp)
+           ("C-M-b" . sp-backward-sexp)
+           ("M-s"   . sp-splice-sexp)))
+
+  (smartparens-global-strict-mode)
+#+END_SRC
+
+*** LISP
+**** Packages
+***** [[https://www.emacswiki.org/emacs/ParEdit][paredit]]
+
+Install and setup paredit for lisp modes.
+
+#+BEGIN_SRC emacs-lisp
+  ;; (use-package paredit
+  ;;   :ensure t
+  ;;   :diminish paredit-mode
+  ;;   :config
+  ;;   (add-hook 'emacs-lisp-mode-hook                  #'enable-paredit-mode)
+  ;;   (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+  ;;   (add-hook 'ielm-mode-hook                        #'enable-paredit-mode)
+  ;;   (add-hook 'lisp-mode-hook                        #'enable-paredit-mode)
+  ;;   (add-hook 'lisp-interaction-mode-hook            #'enable-paredit-mode)
+  ;;   (add-hook 'scheme-mode-hook                      #'enable-paredit-mode))
+#+END_SRC
+
+** Major Modes
+*** JavaScript
+**** Packages
+**** Hooks
+
+* TODOS
+** TODO Move global keybindings to their own respective sections
