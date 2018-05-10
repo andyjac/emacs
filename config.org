@@ -227,8 +227,7 @@ Some globally useful keybindings.
 
 * Editing & Movement
 ** Packages
-
-[[https://github.com/wyuenho/move-dup][move-dup]]
+*** [[https://github.com/wyuenho/move-dup][move-dup]]
 
 #+BEGIN_SRC emacs-lisp
   (use-package move-dup
