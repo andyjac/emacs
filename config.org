@@ -238,6 +238,17 @@ Some globally useful keybindings.
            ("M-N"   . md/duplicate-down)))
 #+END_SRC
 
+*** [[https://github.com/re5et/smart-indent-rigidly][smart-indent-rigidly]]
+
+Manually (un)indent lines at will.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package smart-indent-rigidly
+    :ensure t
+    :bind (("C-<tab>"   . smart-rigid-indent)
+           ("<backtab>" . smart-rigid-unindent)))
+#+END_SRC
+
 ** Functions
 
 Indent and open newline.
