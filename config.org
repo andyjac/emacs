@@ -17,7 +17,7 @@ In case my emacs config gets lost.
 
 * Custom File
 
-Load the auto-generated customizations file from the dotemacs dir.
+Load the auto-generated =custom.el= file from the dotemacs dir.
 
 #+BEGIN_SRC emacs-lisp
   (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -51,7 +51,7 @@ Set backup and auto-save-list directories.
 
 ** Set UTF-8
 
-UTF-8. UTF-8 everywhere.
+UTF-8. UTF-8, everywhere.
 
 #+BEGIN_SRC emacs-lisp
   (setq locale-coding-system   'utf-8)
@@ -97,7 +97,7 @@ This allows me to type over a selected region, which is nice.
 
 ** No bell
 
-Turn off audible and visual bell since it is annoying.
+Turn off audible and visible bell since it is annoying.
 
 #+BEGIN_SRC emacs-lisp
   (setq visible-bell nil)
@@ -144,18 +144,30 @@ Clean up superfluous whitespace in buffer on save.
 
 ** Make it easy to edit this file
 
-Setup keybinding to quickly navigate to this file.
+Setup some functions/keybindings to enable quick editing/reloading
+of this file.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/find-config ()
-    "Edit config.org"
+    "Edit ~/.emacs.d/config.org"
     (interactive)
-    (find-file "~/.emacs.d/config.org"))
+    (find-file
+     (concat user-emacs-directory "config.org")))
 
-  (bind-key "C-c c" 'aj/find-config)
+  ;; (defun aj/reload-config ()
+  ;;   "Reload ~/.emacs.d/config.org"
+  ;;   (interactive)
+  ;;   (org-babel-load-file
+  ;;    (concat user-emacs-directory "config.org")))
+
+  ;; make room for config command prefix
+  (bind-key "C-c c"    nil)
+
+  (bind-key "C-c c e" 'aj/find-config)
+  ;; (bind-key "C-c c r" 'aj/reload-config)
 #+END_SRC
 
-* OSX
+* Mac
 
 Stuff for MacOS.
 
@@ -198,6 +210,9 @@ Some globally useful keybindings.
 ** Font
 *** Tell emacs to use [[http://adobe-fonts.github.io/source-code-pro/][Source Code Pro]] as default font
 
+This is a good font that I am using for now.
+Should maybe try out some other fonts too...
+
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'default-frame-alist '(font . "Source Code Pro-14"))
 #+END_SRC
@@ -214,20 +229,43 @@ Some globally useful keybindings.
 
 ** Theme
 
+Install and load my theme.
+
 #+BEGIN_SRC emacs-lisp
   (use-package color-theme-sanityinc-tomorrow
     :ensure t
     :config (load-theme 'sanityinc-tomorrow-night t))
 #+END_SRC
 
-#+BEGIN_SRC emacs-lisp
-  (use-package noctilux-theme
-    :ensure t)
-#+END_SRC
-
 * Editing & Movement
 ** Packages
+*** [[https://github.com/magnars/expand-region.el][expand-region]]
+
+Neat package that allows you to expand your selection area
+by dynamic semantic units.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package expand-region
+    :ensure t
+    :bind (("C-=" . 'er/expand-region)))
+#+END_SRC
+
+*** [[https://github.com/magnars/multiple-cursors.el][multiple-cursors]]
+
+Does just what it says: gives you multiple cursors in a buffer.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package multiple-cursors
+    :ensure t
+    :bind (("C-S-m" . mc/mark-all-like-this-dwim)
+           ("C-+"   . mc/mark-next-like-this)
+           ("C-_"   . mc/unmark-next-like-this)))
+#+END_SRC
+
 *** [[https://github.com/wyuenho/move-dup][move-dup]]
+
+Handy little package I like, which allows me to move selections
+up and down in a buffer as well as duplicate selections.
 
 #+BEGIN_SRC emacs-lisp
   (use-package move-dup
@@ -240,7 +278,7 @@ Some globally useful keybindings.
 
 *** [[https://github.com/re5et/smart-indent-rigidly][smart-indent-rigidly]]
 
-Manually (un)indent lines at will.
+Manually indent/unindent lines at will.
 
 #+BEGIN_SRC emacs-lisp
   (use-package smart-indent-rigidly
@@ -250,8 +288,7 @@ Manually (un)indent lines at will.
 #+END_SRC
 
 ** Functions
-
-Indent and open newline.
+*** Indent and open newline
 
 #+BEGIN_SRC emacs-lisp
   (defun indent-and-open-newline (&optional previous)
@@ -265,7 +302,7 @@ Indent and open newline.
     (indent-for-tab-command))
 #+END_SRC
 
-Previous indent and open newline.
+*** Previous indent and open newline
 
 #+BEGIN_SRC emacs-lisp
   (defun previous-indent-and-open-newline ()
@@ -274,7 +311,9 @@ Previous indent and open newline.
     (indent-and-open-newline t))
 #+END_SRC
 
-Indent buffer.
+*** Indent whole damn buffer
+
+Wouldn't be caught dead without this one.
 
 #+BEGIN_SRC emacs-lisp
   (defun indent-buffer ()
@@ -398,7 +437,7 @@ Setup dired-mode-hook.
 Install and setup ivy/swiper/counsel for discoverability completion.
 
 #+BEGIN_SRC emacs-lisp
-  (defun andrew/configure-ivy ()
+  (defun aj/configure-ivy ()
     "Configure ivy-mode"
     (ivy-mode 1)
     ;; add ‘recentf-mode’ and bookmarks to ‘ivy-switch-buffer’.
@@ -423,7 +462,7 @@ Install and setup ivy/swiper/counsel for discoverability completion.
     :bind (("C-s" . swiper)
            ("C-r" . swiper)
            ("M-x" . counsel-M-x))
-    :config (andrew/configure-ivy))
+    :config (aj/configure-ivy))
 #+END_SRC
 
 * Completion
@@ -505,10 +544,26 @@ Install and setup paredit for lisp modes.
   ;;   (add-hook 'scheme-mode-hook                      #'enable-paredit-mode))
 #+END_SRC
 
+*** Shell
+
+Function for running a zsh instance inside Emacs.
+
+#+BEGIN_SRC emacs-lisp
+  ;; (defun aj/zsh ()
+  ;;   "Run zsh instance"
+  ;;   (interactive)
+  ;;   (setq explicit-shell-file-name "/bin/zsh")
+  ;;   (setq shell-file-name "zsh")
+  ;;   (setenv "SHELL" shell-file-name)
+  ;;   (ansi-term))
+
+  ;; (bind-key "C-c s"   nil)
+  ;; (bind-key "C-c s z" 'aj/zsh)
+#+END_SRC
+
 ** Major Modes
 *** JavaScript
 **** Packages
 **** Hooks
-
 * TODOS
 ** TODO Move global keybindings to their own respective sections
