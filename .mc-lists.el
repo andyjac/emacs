@@ -6,6 +6,7 @@
         beginning-of-visual-line
         end-of-visual-line
         indent-for-tab-command
+        sp-backward-delete-char
         sp-backward-kill-word
         sp-delete-char
         sp-kill-hybrid-sexp

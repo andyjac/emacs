@@ -480,13 +480,41 @@ Install and enable [[http://company-mode.github.io/][company-mode]] globally.
 * Programming
 ** General
 *** Packages
+**** [[https://github.com/purcell/exec-path-from-shell][exec-path-from-shell]]
+
+Sync Emacs env with shell env. Especially important on OSX.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package exec-path-from-shell
+    :ensure t
+    :init (exec-path-from-shell-initialize))
+#+END_SRC
+
+**** [[http://www.flycheck.org/en/latest/index.html][flycheck]]
+
+Flycheck is an improved version of the built-in =flymake= util.
+It offers on-the-fly syntax checking and out-of-the-box support for numerous languages.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/configure-flycheck ()
+    "Do flycheck configuration."
+    (let ((disabled-checkers
+           '(emacs-lisp-checkdoc)))
+      (setq-default flycheck-disabled-checkers disabled-checkers)))
+
+  (use-package flycheck
+    :ensure t
+    :init (global-flycheck-mode)
+    :config (aj/configure-flycheck))
+#+END_SRC
+
 **** [[https://magit.vc/][magit]]
 
 Magit is an amazing git porcelain! Let's install it and set it up.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/configure-magit ()
-    "Do magit configuration"
+    "Do magit configuration."
     (setq magit-completing-read          'ivy-completing-read)
     (setq magit-completing-read-function 'ivy-completing-read))
 
@@ -503,7 +531,7 @@ Gives nice highlighting for parens that your cursor is currently inside of.
 #+BEGIN_SRC emacs-lisp
   (use-package highlight-parentheses
     :ensure t
-    :config (global-highlight-parentheses-mode))
+    :init (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
 #+END_SRC
 
 **** [[https://github.com/Fuco1/smartparens][smartparens]]
@@ -511,59 +539,121 @@ Gives nice highlighting for parens that your cursor is currently inside of.
 Install and setup smartparens to behave similarly to paredit.
 
 #+BEGIN_SRC emacs-lisp
+  (defun aj/configure-smartparens ()
+    "Do configuration for smartparens."
+    ;; Pull in default smartparens config
+    (use-package smartparens-config)
+    ;; Make `sp-kill-hybrid-sexp' delete all whitespace up until next sexp
+    (setq sp-hybrid-kill-excessive-whitespace t))
+
   (use-package smartparens
     :ensure t
-    :config (require 'smartparens-config)
+    :config (aj/configure-smartparens)
     :bind (("C-M-a" . sp-beginning-of-sexp)
            ("C-M-e" . sp-end-of-sexp)
            ("C-M-p" . sp-up-sexp)
            ("C-M-n" . sp-down-sexp)
            ("C-M-f" . sp-forward-sexp)
            ("C-M-b" . sp-backward-sexp)
-           ("M-s"   . sp-splice-sexp)))
-
-  (smartparens-global-strict-mode)
+           ("M-s"   . sp-splice-sexp)
+           ("C-)"   . sp-forward-slurp-sexp)
+           ("C-}"   . sp-forward-barf-sexp)
+           ("C-("   . sp-backward-slurp-sexp)
+           ("C-{"   . sp-backward-barf-sexp))
+    :init (smartparens-global-strict-mode t))
 #+END_SRC
 
-*** LISP
-**** Packages
-***** [[https://www.emacswiki.org/emacs/ParEdit][paredit]]
+**** [[https://github.com/bbatsov/projectile][projectile]]
 
-Install and setup paredit for lisp modes.
+Install and setup projectile for project management.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package paredit
-  ;;   :ensure t
-  ;;   :diminish paredit-mode
-  ;;   :config
-  ;;   (add-hook 'emacs-lisp-mode-hook                  #'enable-paredit-mode)
-  ;;   (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-  ;;   (add-hook 'ielm-mode-hook                        #'enable-paredit-mode)
-  ;;   (add-hook 'lisp-mode-hook                        #'enable-paredit-mode)
-  ;;   (add-hook 'lisp-interaction-mode-hook            #'enable-paredit-mode)
-  ;;   (add-hook 'scheme-mode-hook                      #'enable-paredit-mode))
+  (use-package projectile
+    :ensure t
+    :custom (projectile-completion-system 'ivy "Use ivy for projectile completion")
+    :hook (prog-mode . projectile-mode))
 #+END_SRC
 
-*** Shell
+**** [[https://github.com/ericdanan/counsel-projectile][counsel-projectile]]
 
-Function for running a zsh instance inside Emacs.
+Hook projectile up to counsel for consistent discoverability.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (defun aj/zsh ()
-  ;;   "Run zsh instance"
-  ;;   (interactive)
-  ;;   (setq explicit-shell-file-name "/bin/zsh")
-  ;;   (setq shell-file-name "zsh")
-  ;;   (setenv "SHELL" shell-file-name)
-  ;;   (ansi-term))
-
-  ;; (bind-key "C-c s"   nil)
-  ;; (bind-key "C-c s z" 'aj/zsh)
+  (use-package counsel-projectile
+    :ensure t
+    :config (counsel-projectile-mode))
 #+END_SRC
 
 ** Major Modes
 *** JavaScript
 **** Packages
-**** Hooks
+***** [[https://github.com/mooz/js2-mode][js2-mode]]
+
+js2-mode is an improved major mode for editing JavaScript. Let's install and configure it.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/configure-js2-mode ()
+    "Do configuration for js2-mode."
+    (setq js2-basic-offset 2)
+    (setq js2-mode-indent-ignore-first-tab t)
+    (setq js2-highlight-external-variables nil)
+    (setq js2-highlight-level 3)
+    (setq js2-mirror-mode nil)
+    (setq js2-mode-show-parse-errors t)
+    (setq js2-mode-show-strict-warnings t)
+    (setq js2-pretty-multiline-declarations t)
+    (setq js2-bounce-indent-p nil))
+
+  (use-package js2-mode
+    :ensure t
+    :mode ("\\.js\\'" . js2-mode)
+    :init (add-hook 'js2-mode-hook 'aj/configure-js2-mode))
+#+END_SRC
+
+***** [[https://github.com/magnars/js2-refactor.el][js2-refactor]]
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/configure-js2-refactor ()
+    "Do configuration for js2-refactor."
+    (js2r-add-keybindings-with-prefix "C-c C-r"))
+
+  (use-package js2-refactor
+    :ensure t
+    :diminish js2-refactor-mode
+    :config (aj/configure-js2-refactor)
+    :init (add-hook 'js2-mode-hook #'js2-refactor-mode))
+#+END_SRC
+
+***** [[https://github.com/nicolaspetton/xref-js2][xref-js2]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package xref-js2
+    :ensure t
+    :config (define-key js-mode-map (kbd "M-.") nil))
+
+  (add-hook
+   'js2-mode-hook
+   (lambda ()
+     (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
+#+END_SRC
+
+***** [[https://github.com/proofit404/company-tern][company-tern]]
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/configure-tern-mode ()
+    "Do configuration for tern mode."
+    (add-to-list 'company-backends 'company-tern)
+    (define-key tern-mode-keymap (kbd "M-.") nil)
+    (define-key tern-mode-keymap (kbd "M-,") nil)
+    (define-key tern-mode-keymap (kbd "C-c C-r") nil))
+
+  (use-package company-tern
+    :ensure t
+    :diminish tern-mode
+    :config (aj/configure-tern-mode))
+
+  (add-hook 'js2-mode-hook #'tern-mode)
+#+END_SRC
+
 * TODOS
 ** TODO Move global keybindings to their own respective sections
