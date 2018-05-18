@@ -5,6 +5,7 @@
       '(
         beginning-of-visual-line
         counsel-M-x
+        dired-efap
         end-of-visual-line
         forward-to-word
         indent-for-tab-command

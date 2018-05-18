@@ -4,7 +4,7 @@
 
 * Introduction
 
-This is my emacs config. There are many like it, but this one is mine.
+This is my Emacs config. There are many like it, but this one is mine.
 
 * Personal Info
 
@@ -167,6 +167,14 @@ Setup =load-path=.
   (add-to-list 'load-path "~/.emacs.d/misc/")
 #+END_SRC
 
+** Remove annoying UI
+
+#+BEGIN_SRC emacs-lisp
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+#+END_SRC
+
 * Mac
 
 Stuff for MacOS.
@@ -196,17 +204,26 @@ Some globally useful keybindings.
   (define-key key-translation-map "\C-j" "\C-x")
 
   ;; make room for user prefix
-  (bind-key "M-j" nil)
-
-  (bind-key "C-S-y" 'kill-ring-search)
-  (bind-key "C-S-j" (lambda () (interactive) (join-line -1)))
+  (bind-key "M-j"     nil)
+  (bind-key "C-S-y"   'kill-ring-search)
+  (bind-key "C-S-j"   (lambda () (interactive) (join-line -1)))
   (bind-key "C-S-SPC" 'exchange-point-and-mark)
   (bind-key "C-x C-/" 'comment-region)
   (bind-key "C-x C-;" 'uncomment-region)
-  (bind-key "C-x C-d"  'dired-jump)
+  (bind-key "C-x C-d" 'dired-jump)
+  (bind-key "M-/"     'hippie-expand)
 #+END_SRC
 
 * Look & Feel
+** Packages
+*** rainbow-mode
+
+#+BEGIN_SRC emacs-lisp
+  (use-package rainbow-mode
+    :diminish
+    :ensure t)
+#+END_SRC
+
 ** Font
 *** Tell emacs to use [[http://adobe-fonts.github.io/source-code-pro/][Source Code Pro]] as default font
 
@@ -228,8 +245,6 @@ Should maybe try out some other fonts too...
 #+END_SRC
 
 ** Theme
-
-Install and load my theme.
 
 #+BEGIN_SRC emacs-lisp
   (use-package color-theme-sanityinc-tomorrow
@@ -332,6 +347,52 @@ Wouldn't be caught dead without this one.
   (bind-key "M-z" 'zap-up-to-char)
   (bind-key "M-F" 'forward-to-word)
   (bind-key "M-B" 'backward-to-word)
+#+END_SRC
+
+* Spelling
+** Hooks
+
+#+BEGIN_SRC emacs-lisp
+  (defadvice org-mode-flyspell-verify (after org-mode-flyspell-verify-hack activate)
+    (let* ((rlt ad-return-value)
+           (begin-regexp "^[ \t]*#\\+begin_\\(src\\|html\\|latex\\|example\\|quote\\)")
+           (end-regexp "^[ \t]*#\\+end_\\(src\\|html\\|latex\\|example\\|quote\\)")
+           (case-fold-search t)
+           b e)
+      (when ad-return-value
+        (save-excursion
+          (setq b (re-search-backward begin-regexp nil t))
+          (if b (setq e (re-search-forward end-regexp nil t))))
+        (if (and b e (< (point) e)) (setq rlt nil)))
+      (setq ad-return-value rlt)))
+
+  (defun aj/org-ispell ()
+    "Configure `ispell-skip-region-alist' for `org-mode'."
+    ;; (make-local-variable 'ispell-skip-region-alist)
+    (setq ispell-parser 'tex)
+    (add-to-list 'ispell-skip-region-alist '(org-property-drawer-re))
+    (add-to-list 'ispell-skip-region-alist '("~" "~"))
+    (add-to-list 'ispell-skip-region-alist '("=" "="))
+    (add-to-list 'ispell-skip-region-alist '("^#\\+BEGIN_SRC" . "^#\\+END_SRC")))
+
+  (add-hook 'org-mode-hook #'aj/org-ispell)
+
+  (add-hook 'message-mode-hook  'flyspell-mode)
+  (add-hook 'org-mode-hook      'flyspell-mode)
+  (add-hook 'text-mode-hook     'flyspell-mode)
+  (add-hook 'flyspell-mode-hook '(lambda () (diminish 'flyspell-mode "SP")))
+#+END_SRC
+
+** Keybindings
+
+#+BEGIN_SRC emacs-lisp
+  ;; Make room for ispell prefix
+  (bind-key "C-c i"    nil)
+  (bind-key "C-c i b" 'ispell)
+  (bind-key "C-c i w" 'ispell-word)
+
+  (eval-after-load "flyspell"
+    '(define-key flyspell-mode-map (kbd "C-,") nil))
 #+END_SRC
 
 * Frames, Windows & Buffers
@@ -438,14 +499,14 @@ Setup dired-mode-hook.
   (add-hook 'dired-mode-hook 'aj/dired-mode-hook)
 #+END_SRC
 
-* Discoverability
+* Discoverabilityf
 ** Packages
 *** [[https://github.com/abo-abo/swiper][ivy]]
 
 Install and setup ivy/swiper/counsel for discoverability completion.
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/configure-ivy ()
+  (defun aj/config--ivy ()
     "Do configuration for ivy-mode."
     (ivy-mode 1)
     ;; Add ‘recentf-mode’ and bookmarks to ‘ivy-switch-buffer’.
@@ -461,8 +522,8 @@ Install and setup ivy/swiper/counsel for discoverability completion.
           ;; Allow input not in order
           '((t . ivy--regex-ignore-order))))
 
-  (defun aj/configure-counsel ()
-    "Do configuration for counsel."
+  (defun aj/init--counsel ()
+    "Do configuration for counsel mode."
     (setq counsel-yank-pop-height 15))
 
   (use-package swiper
@@ -473,8 +534,7 @@ Install and setup ivy/swiper/counsel for discoverability completion.
     :bind (("M-x"     . counsel-M-x)
            ("C-x C-f" . counsel-find-file)
            ("M-y"     . counsel-yank-pop))
-    ;; :config (aj/configure-counsel)
-    )
+    :init (aj/init--counsel))
 
   (use-package ivy
     :ensure t
@@ -484,13 +544,22 @@ Install and setup ivy/swiper/counsel for discoverability completion.
            ("C-r" . swiper)
            :map ivy-minibuffer-map
            ("M-y" . ivy-next-line))
-    :config (aj/configure-ivy))
+    :config (aj/config--ivy))
 
   (bind-key "C-c s"   nil)
   (bind-key "C-c s g" 'counsel-git)
   (bind-key "C-c s j" 'counsel-git-grep)
   (bind-key "C-c s a" 'counsel-ag)
   (bind-key "C-c s l" 'counsel-locate)
+#+END_SRC
+
+*** [[https://github.com/justbur/emacs-which-key][which-key]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :ensure t
+    :diminish
+    :config (which-key-mode))
 #+END_SRC
 
 * Completion
@@ -519,37 +588,19 @@ Sync Emacs env with shell env. Especially important on OSX.
     :init (exec-path-from-shell-initialize))
 #+END_SRC
 
-**** [[http://www.flycheck.org/en/latest/index.html][flycheck]]
-
-Flycheck is an improved version of the built-in =flymake= util.
-It offers on-the-fly syntax checking and out-of-the-box support for numerous languages.
-
-#+BEGIN_SRC emacs-lisp
-  (defun aj/configure-flycheck ()
-    "Do flycheck configuration."
-    (let ((disabled-checkers
-           '(emacs-lisp-checkdoc)))
-      (setq-default flycheck-disabled-checkers disabled-checkers)))
-
-  (use-package flycheck
-    :ensure t
-    :init (global-flycheck-mode)
-    :config (aj/configure-flycheck))
-#+END_SRC
-
 **** [[https://magit.vc/][magit]]
 
 Magit is an amazing git porcelain! Let's install it and set it up.
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/configure-magit ()
+  (defun aj/config--magit ()
     "Do magit configuration."
     (setq magit-completing-read          'ivy-completing-read)
     (setq magit-completing-read-function 'ivy-completing-read))
 
   (use-package magit
     :ensure t
-    :config (aj/configure-magit)
+    :config (aj/config--magit)
     :bind (("M-j g" . magit-status)))
 #+END_SRC
 
@@ -569,7 +620,7 @@ Gives nice highlighting for parens that your cursor is currently inside of.
 Install and setup smartparens to behave similarly to paredit.
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/configure-smartparens ()
+  (defun aj/config--smartparens ()
     "Do configuration for smartparens."
     ;; Pull in default smartparens config
     (use-package smartparens-config)
@@ -579,7 +630,7 @@ Install and setup smartparens to behave similarly to paredit.
   (use-package smartparens
     :ensure t
     :diminish
-    :config (aj/configure-smartparens)
+    :config (aj/config--smartparens)
     :bind (("C-M-a" . sp-beginning-of-sexp)
            ("C-M-e" . sp-end-of-sexp)
            ("C-M-p" . sp-up-sexp)
@@ -615,6 +666,17 @@ Hook projectile up to counsel for consistent discoverability.
     :config (counsel-projectile-mode))
 #+END_SRC
 
+**** [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package wgrep
+    :ensure t
+    :config (setq wgrep-auto-save-buffer t))
+
+  (use-package wgrep-ag
+    :ensure t)
+#+END_SRC
+
 ** Major Modes
 *** JavaScript
 **** Packages
@@ -623,7 +685,7 @@ Hook projectile up to counsel for consistent discoverability.
 js2-mode is an improved major mode for editing JavaScript. Let's install and configure it.
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/configure-js2-mode ()
+  (defun aj/config--js2 ()
     "Do configuration for js2-mode."
     (setq js2-basic-offset 2)
     (setq js2-mode-indent-ignore-first-tab t)
@@ -638,20 +700,20 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
   (use-package js2-mode
     :ensure t
     :mode ("\\.js\\'" . js2-mode)
-    :init (add-hook 'js2-mode-hook 'aj/configure-js2-mode))
+    :init (add-hook 'js2-hook 'aj/config--js2))
 #+END_SRC
 
 ***** [[https://github.com/magnars/js2-refactor.el][js2-refactor]]
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/configure-js2-refactor ()
+  (defun aj/config--js2-refactor ()
     "Do configuration for js2-refactor."
     (js2r-add-keybindings-with-prefix "C-c C-r"))
 
   (use-package js2-refactor
     :ensure t
     :diminish js2-refactor-mode
-    :config (aj/configure-js2-refactor)
+    :config (aj/config--js2-refactor)
     :init (add-hook 'js2-mode-hook #'js2-refactor-mode))
 #+END_SRC
 
@@ -671,7 +733,7 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
 ***** [[https://github.com/proofit404/company-tern][company-tern]]
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/configure-tern-mode ()
+  (defun aj/config--tern ()
     "Do configuration for tern mode."
     (add-to-list 'company-backends 'company-tern)
     (define-key tern-mode-keymap (kbd "M-.") nil)
@@ -681,7 +743,7 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
   (use-package company-tern
     :ensure t
     :diminish tern-mode
-    :config (aj/configure-tern-mode))
+    :config (aj/config--tern))
 
   (add-hook 'js2-mode-hook #'tern-mode)
 #+END_SRC
