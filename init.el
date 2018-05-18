@@ -33,18 +33,17 @@
   (eval-when-compile (require 'use-package))
   (require 'diminish)                ;; if you use :diminish
   (require 'bind-key)                ;; if you use any :bind variant
-
   (require 'misc)
 
   ;; load config
   (org-babel-load-file (concat user-emacs-directory "config.org"))
 
   ;; set up minibuffer hooks for garbage collection management
-  (defun my-minibuffer-setup-hook ()
+  (defun aj/minibuffer-setup-hook ()
     (setq gc-cons-threshold most-positive-fixnum))
 
-  (defun my-minibuffer-exit-hook ()
+  (defun aj/minibuffer-exit-hook ()
     (setq gc-cons-threshold 800000))
 
-  (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
-  (add-hook 'minibuffer-exit-hook  #'my-minibuffer-exit-hook))
+  (add-hook 'minibuffer-setup-hook #'aj/minibuffer-setup-hook)
+  (add-hook 'minibuffer-exit-hook  #'aj/minibuffer-exit-hook))
