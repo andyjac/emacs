@@ -4,7 +4,9 @@
 (setq mc/cmds-to-run-for-all
       '(
         beginning-of-visual-line
+        counsel-M-x
         end-of-visual-line
+        forward-to-word
         indent-for-tab-command
         sp-backward-delete-char
         sp-backward-kill-word

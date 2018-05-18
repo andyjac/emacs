@@ -154,17 +154,17 @@ of this file.
     (find-file
      (concat user-emacs-directory "config.org")))
 
-  ;; (defun aj/reload-config ()
-  ;;   "Reload ~/.emacs.d/config.org"
-  ;;   (interactive)
-  ;;   (org-babel-load-file
-  ;;    (concat user-emacs-directory "config.org")))
-
   ;; make room for config command prefix
   (bind-key "C-c c"    nil)
-
   (bind-key "C-c c e" 'aj/find-config)
-  ;; (bind-key "C-c c r" 'aj/reload-config)
+#+END_SRC
+
+** Load path
+
+Setup =load-path=.
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/misc/")
 #+END_SRC
 
 * Mac
@@ -417,6 +417,14 @@ dired-efap allows me to edit a filename in place while in a dired buffer.
     :config (setq dired-efap-initial-filename-selection nil))
 #+END_SRC
 
+*** dired-details
+
+#+BEGIN_SRC emacs-lisp
+  (require 'dired-details)
+  (setq-default dired-details-hidden-string "--- ")
+  (dired-details-install)
+#+END_SRC
+
 ** Hooks
 
 Setup dired-mode-hook.
@@ -438,31 +446,51 @@ Install and setup ivy/swiper/counsel for discoverability completion.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/configure-ivy ()
-    "Configure ivy-mode"
+    "Do configuration for ivy-mode."
     (ivy-mode 1)
-    ;; add ‘recentf-mode’ and bookmarks to ‘ivy-switch-buffer’.
+    ;; Add ‘recentf-mode’ and bookmarks to ‘ivy-switch-buffer’.
     (setq ivy-use-virtual-buffers t)
-    ;; number of result lines to display
-    (setq ivy-height 10)
-    ;; does not count candidates
+    ;; Number of result lines to display
+    (setq ivy-height 15)
+    ;; Does not count candidates
     (setq ivy-count-format "")
-    ;; no regexp by default
+    ;; No regexp by default
     (setq ivy-initial-inputs-alist nil)
-    ;; configure regexp engine.
+    ;; Configure regexp engine.
     (setq ivy-re-builders-alist
-          ;; allow input not in order
+          ;; Allow input not in order
           '((t . ivy--regex-ignore-order))))
 
-  (use-package counsel :ensure t)
-  (use-package swiper :ensure t)
+  (defun aj/configure-counsel ()
+    "Do configuration for counsel."
+    (setq counsel-yank-pop-height 15))
+
+  (use-package swiper
+    :ensure t)
+
+  (use-package counsel
+    :ensure t
+    :bind (("M-x"     . counsel-M-x)
+           ("C-x C-f" . counsel-find-file)
+           ("M-y"     . counsel-yank-pop))
+    ;; :config (aj/configure-counsel)
+    )
 
   (use-package ivy
     :ensure t
-    :diminish (ivy-mode . "")
+    :after (counsel swiper)
+    :diminish
     :bind (("C-s" . swiper)
            ("C-r" . swiper)
-           ("M-x" . counsel-M-x))
+           :map ivy-minibuffer-map
+           ("M-y" . ivy-next-line))
     :config (aj/configure-ivy))
+
+  (bind-key "C-c s"   nil)
+  (bind-key "C-c s g" 'counsel-git)
+  (bind-key "C-c s j" 'counsel-git-grep)
+  (bind-key "C-c s a" 'counsel-ag)
+  (bind-key "C-c s l" 'counsel-locate)
 #+END_SRC
 
 * Completion
@@ -474,6 +502,7 @@ Install and enable [[http://company-mode.github.io/][company-mode]] globally.
 #+BEGIN_SRC emacs-lisp
   (use-package company
     :ensure t
+    :diminish
     :config (global-company-mode))
 #+END_SRC
 
@@ -531,6 +560,7 @@ Gives nice highlighting for parens that your cursor is currently inside of.
 #+BEGIN_SRC emacs-lisp
   (use-package highlight-parentheses
     :ensure t
+    :diminish
     :init (add-hook 'prog-mode-hook #'highlight-parentheses-mode))
 #+END_SRC
 
@@ -548,6 +578,7 @@ Install and setup smartparens to behave similarly to paredit.
 
   (use-package smartparens
     :ensure t
+    :diminish
     :config (aj/configure-smartparens)
     :bind (("C-M-a" . sp-beginning-of-sexp)
            ("C-M-e" . sp-end-of-sexp)
