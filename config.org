@@ -134,9 +134,9 @@ Highlight the line that the cursor is currently on.
   (global-hl-line-mode t)
 #+END_SRC
 
-** Delete trailing whitespace on save
+** Delete trailing white space on save
 
-Clean up superfluous whitespace in buffer on save.
+Clean up superfluous white space in buffer on save.
 
 #+BEGIN_SRC emacs-lisp
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
@@ -177,7 +177,7 @@ Setup =load-path=.
 
 * Mac
 
-Stuff for MacOS.
+Stuff for Mac OS.
 
 #+BEGIN_SRC emacs-lisp
   (when (string-equal system-type 'darwin)
@@ -470,7 +470,7 @@ Helper function that kills the currently focused buffer. Pretty self explanatory
 ** Packages
 *** [[https://github.com/juan-leon/dired-efap][dired-efap]]
 
-dired-efap allows me to edit a filename in place while in a dired buffer.
+dired-efap allows me to edit a file name in place while in a dired buffer.
 
 #+BEGIN_SRC emacs-lisp
   (use-package dired-efap
@@ -490,7 +490,7 @@ dired-efap allows me to edit a filename in place while in a dired buffer.
 
 Setup dired-mode-hook.
 
-#+begin_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp
   (defun aj/dired-mode-hook ()
     "Setup dired-mode-hook"
     (define-key dired-mode-map (kbd "<backspace>") 'dired-up-directory)
@@ -499,7 +499,7 @@ Setup dired-mode-hook.
   (add-hook 'dired-mode-hook 'aj/dired-mode-hook)
 #+END_SRC
 
-* Discoverabilityf
+* Discoverability
 ** Packages
 *** [[https://github.com/abo-abo/swiper][ivy]]
 
@@ -569,10 +569,16 @@ Install and setup ivy/swiper/counsel for discoverability completion.
 Install and enable [[http://company-mode.github.io/][company-mode]] globally.
 
 #+BEGIN_SRC emacs-lisp
+  (defun aj/config--company ()
+    "Do configuration for company-mode."
+    (setq company-tooltip-align-annotations t)
+    (global-company-mode))
+
   (use-package company
     :ensure t
     :diminish
-    :config (global-company-mode))
+    :bind (("C-c <tab>" . company-complete))
+    :config (aj/config--company))
 #+END_SRC
 
 * Programming
@@ -677,7 +683,7 @@ Hook projectile up to counsel for consistent discoverability.
     :ensure t)
 #+END_SRC
 
-** Major Modes
+** Languages
 *** JavaScript
 **** Packages
 ***** [[https://github.com/mooz/js2-mode][js2-mode]]
@@ -746,6 +752,35 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
     :config (aj/config--tern))
 
   (add-hook 'js2-mode-hook #'tern-mode)
+#+END_SRC
+
+*** TypeScript
+
+Do setup for =typescript-mode= and =tide=.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/setup-tide ()
+    "Setup TIDE."
+    (tide-setup)
+    (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    (tide-hl-identifier-mode +1)
+    (eldoc-mode +1))
+
+  (defun aj/setup-typescript ()
+    "Setup TypeScript environment."
+    (interactive)
+    (setq typescript-expr-indent-offset 2)
+    (aj/setup-tide))
+
+  (use-package typescript-mode
+    :ensure t
+    :mode (("\\.ts\\'" . typescript-mode))
+    :init
+    (use-package tide
+      :ensure t
+      :diminish
+      :hook (typescript-mode . aj/setup-typescript)))
 #+END_SRC
 
 * TODOS
