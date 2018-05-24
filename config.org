@@ -247,9 +247,22 @@ Should maybe try out some other fonts too...
 ** Theme
 
 #+BEGIN_SRC emacs-lisp
+  ;; tomorrow themes
   (use-package color-theme-sanityinc-tomorrow
     :ensure t
-    :config (load-theme 'sanityinc-tomorrow-night t))
+    ;; :config (load-theme 'sanityinc-tomorrow-night t)
+    )
+
+  ;; base16 themes
+  (use-package base16-theme
+    :ensure t
+    ;; :config (load-theme 'base16-default-dark t)
+    )
+
+  ;; gruvbox themes
+  (use-package gruvbox-theme
+    :ensure t
+    :config (load-theme 'gruvbox-dark-hard))
 #+END_SRC
 
 * Editing & Movement
@@ -564,21 +577,82 @@ Install and setup ivy/swiper/counsel for discoverability completion.
 
 * Completion
 ** Packages
-*** [[http://company-mode.github.io/][company-mode]]
+*** [[https://www.emacswiki.org/emacs/ElDoc][eldoc]]
 
-Install and enable [[http://company-mode.github.io/][company-mode]] globally.
+#+BEGIN_SRC emacs-lisp
+  ;; (use-package eldoc
+  ;;   :diminish
+  ;;   :init (add-hook 'ycmd-mode-hook 'ycmd-eldoc-setup))
+#+END_SRC
+
+*** [[https://github.com/abingham/emacs-ycmd][ycmd]]
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--ycmd ()
+    "Do configuration for ycmd."
+    (set-variable 'ycmd-server-command '("python" "/Users/andrewjacobson/.emacs.d/misc/ycmd/ycmd"))
+    (set-variable 'ycmd-global-config (expand-file-name "~/.ycm_conf.py")))
+
+  (use-package ycmd
+    :ensure t
+    :hook (prog-mode . ycmd-mode)
+    :config (aj/config--ycmd))
+#+END_SRC
+
+*** [[http://company-mode.github.io/][company]]
+
+Install, configure and enable [[http://company-mode.github.io/][company]] globally.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/config--company ()
     "Do configuration for company-mode."
     (setq company-tooltip-align-annotations t)
-    (global-company-mode))
+    (setq company-idle-delay 0.1)
+    (setq company-minimum-prefix-length 2)
+    (setq company-tooltip-limit 20)
+    (setq company-backends
+          (mapcar #'company-mode/backend-with-yas company-backends)))
 
   (use-package company
     :ensure t
     :diminish
+    :preface
+    ;; enable yasnippet everywhere
+    (defvar company-mode/enable-yas t
+      "Enable yasnippet for all backends.")
+    (defun company-mode/backend-with-yas (backend)
+      (if (or
+           (not company-mode/enable-yas)
+           (and (listp backend) (member 'company-yasnippet backend)))
+          backend
+        (append (if (consp backend) backend (list backend))
+                '(:with company-yasnippet))))
     :bind (("C-c <tab>" . company-complete))
+    :init (global-company-mode t)
     :config (aj/config--company))
+#+END_SRC
+
+*** [[https://github.com/abingham/emacs-ycmd/blob/master/company-ycmd.el][company-ycmd]]
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--company-ycmd ()
+    "Do configuration for company-ycmd"
+    (add-to-list
+     'company-backends (company-mode/backend-with-yas 'company-ycmd)))
+
+  (use-package company-ycmd
+    :ensure t
+    :init (company-ycmd-setup)
+    :config (aj/config--company-ycmd))
+#+END_SRC
+
+*** [[https://github.com/joaotavora/yasnippet][yasnippet]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package yasnippet
+    :ensure t
+    :diminish yas-minor-mode
+    :init (yas-global-mode t))
 #+END_SRC
 
 * Programming
@@ -631,7 +705,8 @@ Install and setup smartparens to behave similarly to paredit.
     ;; Pull in default smartparens config
     (use-package smartparens-config)
     ;; Make `sp-kill-hybrid-sexp' delete all whitespace up until next sexp
-    (setq sp-hybrid-kill-excessive-whitespace t))
+    ;; (setq sp-hybrid-kill-excessive-whitespace t)
+    )
 
   (use-package smartparens
     :ensure t
@@ -683,7 +758,29 @@ Hook projectile up to counsel for consistent discoverability.
     :ensure t)
 #+END_SRC
 
-** Languages
+**** [[https://github.com/flycheck/flycheck][flycheck]]
+
+Install and setup =flycheck-mode=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flycheck
+    :ensure t
+    :diminish (flycheck-mode)
+    :init (global-flycheck-mode t))
+#+END_SRC
+
+**** [[https://github.com/abingham/emacs-ycmd/blob/master/flycheck-ycmd.el][flycheck-ycmd]]
+
+Setup and install =flycheck-ycmd=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flycheck-ycmd
+    :ensure t
+    :commands (flycheck-ycmd-setup)
+    :hook ('ycmd-mode-hook 'flycheck-ycmd-setup))
+#+END_SRC
+
+** Major Modes
 *** JavaScript
 **** Packages
 ***** [[https://github.com/mooz/js2-mode][js2-mode]]
@@ -691,7 +788,7 @@ Hook projectile up to counsel for consistent discoverability.
 js2-mode is an improved major mode for editing JavaScript. Let's install and configure it.
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/config--js2 ()
+  (defun aj/setup-js2 ()
     "Do configuration for js2-mode."
     (setq js2-basic-offset 2)
     (setq js2-mode-indent-ignore-first-tab t)
@@ -705,8 +802,8 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
 
   (use-package js2-mode
     :ensure t
-    :mode ("\\.js\\'" . js2-mode)
-    :init (add-hook 'js2-hook 'aj/config--js2))
+    :mode "\\.js\\'"
+    :hook (js2-mode . aj/setup-js2))
 #+END_SRC
 
 ***** [[https://github.com/magnars/js2-refactor.el][js2-refactor]]
@@ -781,6 +878,25 @@ Do setup for =typescript-mode= and =tide=.
       :ensure t
       :diminish
       :hook (typescript-mode . aj/setup-typescript)))
+#+END_SRC
+
+*** Web Mode
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/setup-web-mode ()
+    "Add custom settings for web-mode."
+    (when (string-equal "tsx" (file-name-extension buffer-file-name))
+      (if (equal web-mode-content-type "javascript")
+          (web-mode-set-content-type "jsx"))
+      (aj/setup-typescript)
+      (flycheck-add-mode 'typescript-tslint 'web-mode))
+    (setq web-mode-markup-indent-offset 2))
+
+  (use-package web-mode
+    :ensure t
+    :mode (("\\.tsx\\'" . web-mode)
+           ("\\.jsx\\'" . web-mode))
+    :init (add-hook 'web-mode-hook 'aj/setup-web-mode))
 #+END_SRC
 
 * TODOS

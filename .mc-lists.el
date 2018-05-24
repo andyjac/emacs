@@ -9,9 +9,11 @@
         end-of-visual-line
         forward-to-word
         indent-for-tab-command
+        org-self-insert-command
         sp-backward-delete-char
         sp-backward-kill-word
         sp-delete-char
+        sp-forward-sexp
         sp-kill-hybrid-sexp
         ))
 
