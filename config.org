@@ -8,7 +8,7 @@ This is my Emacs config. There are many like it, but this one is mine.
 
 * Personal Info
 
-In case my emacs config gets lost.
+In case my emacs config gets lost
 
 #+BEGIN_SRC emacs-lisp
   (setq user-full-name "Andrew Jacobson"
@@ -195,6 +195,71 @@ Stuff for Mac OS.
     (setq ns-use-native-fullscreen nil))
 #+END_SRC
 
+* Functions
+** force-save
+#+BEGIN_SRC emacs-lisp
+  (defun aj/force-save ()
+    (interactive)
+    (not-modified 1)
+    (save-buffer))
+#+END_SRC
+
+** find-file-remote
+
+Open a file on a remote server via ssh.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/find-file-remote ()
+    (interactive)
+    (let ((method "ssh"))
+      (aj/ivy--tramp-host-completion
+       method
+       (lambda (host)
+         (counsel-find-file (concat "/ssh:" host ":~/"))))))
+#+END_SRC
+
+** sudo-find-file
+
+Open a local file with sudo.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/sudo-find-file ()
+    "Open a file using sudo"
+    (interactive)
+    (counsel-find-file (concat "/sudo::/")))
+#+END_SRC
+
+** sudo-find-file-remote
+
+A tramp host completion function, which provides an ivy list
+of =user@host= completions.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/ivy--tramp-host-completion (method &optional handler)
+    "Find user@host completions for METHOD"
+    (let (res)
+      (require 'tramp)
+      (dolist (x (tramp-get-completion-function method))
+        (setq res (append res (funcall (car x) (cadr x)))))
+      (setq res (delq nil res))
+      (setq res (cl-delete-duplicates res :test #'equal))
+      (ivy-read "Hosts: " (mapcar #'ivy-build-tramp-name res)
+                :action (or handler nil))))
+#+END_SRC
+
+=sudo-find-file-remote= definition.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/sudo-find-file-remote ()
+    "Open a file remotely using sudo"
+    (interactive)
+    (let ((method "ssh"))
+      (aj/ivy--tramp-host-completion
+       method
+       (lambda (host)
+         (counsel-find-file (concat "/ssh:" host "|sudo:" host ":/"))))))
+#+END_SRC
+
 * Global Keybindings
 
 Some globally useful keybindings.
@@ -203,15 +268,27 @@ Some globally useful keybindings.
   ;; allow C-j to be used in place of C-x
   (define-key key-translation-map "\C-j" "\C-x")
 
-  ;; make room for user prefix
-  (bind-key "M-j"     nil)
-  (bind-key "C-S-y"   'kill-ring-search)
-  (bind-key "C-S-j"   (lambda () (interactive) (join-line -1)))
-  (bind-key "C-S-SPC" 'exchange-point-and-mark)
-  (bind-key "C-x C-/" 'comment-region)
-  (bind-key "C-x C-;" 'uncomment-region)
-  (bind-key "C-x C-d" 'dired-jump)
-  (bind-key "M-/"     'hippie-expand)
+  ;; make room for prefix
+  (bind-key "M-j"        nil)
+
+  (bind-key "C-S-y"      'kill-ring-search)
+  (bind-key "C-S-j"      (lambda () (interactive) (join-line -1)))
+  (bind-key "C-S-SPC"    'exchange-point-and-mark)
+  (bind-key "C-x C-/"    'comment-region)
+  (bind-key "C-x C-;"    'uncomment-region)
+  (bind-key "C-x C-d"    'dired-jump)
+  (bind-key "M-/"        'hippie-expand)
+  (bind-key "C-x C-s"    'aj/force-save)
+  (bind-key "C-<"        'comint-previous-input)
+  (bind-key "C->"        'comint-next-input)
+  (bind-key "<C-return>" 'newline)
+  (bind-key "C-c e"      'ielm)
+
+  ;; make room for prefix
+  (bind-key "C-c f"      nil)
+  (bind-key "C-c f r"    'aj/find-file-remote)
+  (bind-key "C-c f s"    'aj/sudo-find-file)
+  (bind-key "C-c f R"    'aj/sudo-find-file-remote)
 #+END_SRC
 
 * Look & Feel
@@ -222,6 +299,14 @@ Some globally useful keybindings.
   (use-package rainbow-mode
     :diminish
     :ensure t)
+#+END_SRC
+
+*** [[https://github.com/Malabarba/smart-mode-line/][smart-mode-line]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package smart-mode-line
+    :ensure t
+    :init (smart-mode-line-enable))
 #+END_SRC
 
 ** Font
@@ -313,6 +398,23 @@ Manually indent/unindent lines at will.
     :ensure t
     :bind (("C-<tab>"   . smart-rigid-indent)
            ("<backtab>" . smart-rigid-unindent)))
+#+END_SRC
+
+*** [[https://www.emacswiki.org/emacs/UndoTree][undo-tree]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package undo-tree
+    :ensure t)
+#+END_SRC
+
+*** [[https://github.com/mickeynp/smart-scan][smartscan]]
+
+Quickly jump between symbols in a given buffer.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package smartscan
+    :ensure t
+    :init (global-smartscan-mode t))
 #+END_SRC
 
 ** Functions
@@ -456,6 +558,37 @@ counter-clockwise direction.
            (switch-to-buffer buffer))) map)))
 #+END_SRC
 
+*** Toggle split window
+
+Helper function that toggles the way in which the windows are split (left/right or down/up).
+
+#+BEGIN_SRC emacs-lisp
+  (defun toggle-window-split ()
+    (interactive)
+    (if (= (count-windows) 2)
+        (let* ((this-win-buffer (window-buffer))
+               (next-win-buffer (window-buffer (next-window)))
+               (this-win-edges (window-edges (selected-window)))
+               (next-win-edges (window-edges (next-window)))
+               (this-win-2nd (not (and (<= (car this-win-edges)
+                                           (car next-win-edges))
+                                       (<= (cadr this-win-edges)
+                                           (cadr next-win-edges)))))
+               (splitter
+                (if (= (car this-win-edges)
+                       (car (window-edges (next-window))))
+                    'split-window-horizontally
+                  'split-window-vertically)))
+          (delete-other-windows)
+          (let ((first-win (selected-window)))
+            (funcall splitter)
+            (if this-win-2nd (other-window 1))
+            (set-window-buffer (selected-window) this-win-buffer)
+            (set-window-buffer (next-window) next-win-buffer)
+            (select-window first-win)
+            (if this-win-2nd (other-window 1))))))
+#+END_SRC
+
 *** Kill focused buffer
 
 Helper function that kills the currently focused buffer. Pretty self explanatory.
@@ -476,6 +609,7 @@ Helper function that kills the currently focused buffer. Pretty self explanatory
   (bind-key "M-j l"      'next-frame-in-window)
   (bind-key "M-j h"      'previous-frame-in-window)
   (bind-key "C-|"        'rotate-windows-in-frame)
+  (bind-key "C-M-]"      'toggle-window-split)
   (bind-key "C-x C-k"    'kill-focused-buffer)
 #+END_SRC
 
@@ -609,9 +743,39 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
     (setq company-tooltip-align-annotations t)
     (setq company-idle-delay 0.1)
     (setq company-minimum-prefix-length 2)
-    (setq company-tooltip-limit 20)
+    (setq company-tooltip-limit 10)
     (setq company-backends
-          (mapcar #'company-mode/backend-with-yas company-backends)))
+          (mapcar #'company-mode/backend-with-yas company-backends))
+    (setq company-show-numbers t)
+    (aj/company--setup-complete-by-number-keybindings))
+
+  ;; https://oremacs.com/2017/12/27/company-numbers/
+  (defun aj/company--complete-by-number ()
+    "Forward to `company-complete-number'.
+  Unless the number is potentially part of the candidate.
+  In that case, insert the number."
+    (interactive)
+    (let* ((k (this-command-keys))
+           (re (concat "^" company-prefix k)))
+      (if (or (cl-find-if (lambda (s) (string-match re s))
+                          company-candidates)
+              (> (string-to-number k)
+                 (length company-candidates)))
+          (self-insert-command 1)
+        (company-complete-number
+         (if (equal k "0")
+             10
+           (string-to-number k))))))
+
+  (defun aj/company--setup-complete-by-number-keybindings ()
+    (let ((map company-active-map))
+      (mapc (lambda (x) (define-key map (format "%d" x) 'aj/company--complete-by-number))
+            (number-sequence 0 9))
+      (define-key map " " (lambda ()
+                            (interactive)
+                            (company-abort)
+                            (self-insert-command 1)))
+      (define-key map (kbd "<return>") nil)))
 
   (use-package company
     :ensure t
@@ -644,6 +808,16 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
     :ensure t
     :init (company-ycmd-setup)
     :config (aj/config--company-ycmd))
+#+END_SRC
+
+*** [[https://github.com/Sarcasm/company-irony][company-irony]]
+
+Install =company-irony= and add it to the =company-backends= list.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package company-irony
+    :ensure t
+    :config (add-to-list 'company-backends 'company-irony))
 #+END_SRC
 
 *** [[https://github.com/joaotavora/yasnippet][yasnippet]]
@@ -723,7 +897,7 @@ Install and setup smartparens to behave similarly to paredit.
            ("C-}"   . sp-forward-barf-sexp)
            ("C-("   . sp-backward-slurp-sexp)
            ("C-{"   . sp-backward-barf-sexp))
-    :init (smartparens-global-strict-mode t))
+    :init (smartparens-global-mode t))
 #+END_SRC
 
 **** [[https://github.com/bbatsov/projectile][projectile]]
@@ -749,6 +923,8 @@ Hook projectile up to counsel for consistent discoverability.
 
 **** [[https://github.com/mhayashi1120/Emacs-wgrep][wgrep]]
 
+wgrep is good. Let's install it now.
+
 #+BEGIN_SRC emacs-lisp
   (use-package wgrep
     :ensure t
@@ -760,18 +936,19 @@ Hook projectile up to counsel for consistent discoverability.
 
 **** [[https://github.com/flycheck/flycheck][flycheck]]
 
-Install and setup =flycheck-mode=.
+Install and setup =flycheck-mode= for syntax checking on-the-fly.
 
 #+BEGIN_SRC emacs-lisp
   (use-package flycheck
     :ensure t
     :diminish (flycheck-mode)
-    :init (global-flycheck-mode t))
+    :init (global-flycheck-mode t)
+    :config (setq-default flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
 #+END_SRC
 
 **** [[https://github.com/abingham/emacs-ycmd/blob/master/flycheck-ycmd.el][flycheck-ycmd]]
 
-Setup and install =flycheck-ycmd=.
+Install and setup =flycheck-ycmd= so that flycheck can hook into the ycmd server results.
 
 #+BEGIN_SRC emacs-lisp
   (use-package flycheck-ycmd
@@ -780,7 +957,22 @@ Setup and install =flycheck-ycmd=.
     :hook ('ycmd-mode-hook 'flycheck-ycmd-setup))
 #+END_SRC
 
-** Major Modes
+**** [[https://github.com/jacktasia/dumb-jump][dump-jump]]
+
+Install and configure =dumb-jump=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package dumb-jump
+    :ensure t
+    :bind (("M-g o" . dumb-jump-go-other-window)
+           ("M-g j" . dumb-jump-go)
+           ("M-g i" . dumb-jump-go-prompt)
+           ("M-g x" . dumb-jump-go-prefer-external)
+           ("M-g z" . dumb-jump-go-prefer-external-other-window))
+    :config (setq dumb-jump-selector 'ivy))
+#+END_SRC
+
+** Languages
 *** JavaScript
 **** Packages
 ***** [[https://github.com/mooz/js2-mode][js2-mode]]
@@ -867,7 +1059,7 @@ Do setup for =typescript-mode= and =tide=.
   (defun aj/setup-typescript ()
     "Setup TypeScript environment."
     (interactive)
-    (setq typescript-expr-indent-offset 2)
+    ;; (setq typescript-expr-indent-offset 2)
     (aj/setup-tide))
 
   (use-package typescript-mode
@@ -880,7 +1072,7 @@ Do setup for =typescript-mode= and =tide=.
       :hook (typescript-mode . aj/setup-typescript)))
 #+END_SRC
 
-*** Web Mode
+*** Web
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/setup-web-mode ()
@@ -899,5 +1091,175 @@ Do setup for =typescript-mode= and =tide=.
     :init (add-hook 'web-mode-hook 'aj/setup-web-mode))
 #+END_SRC
 
+*** Markdown
+
+Install and setup =markdown-mode=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package markdown-mode
+    :ensure t
+    :mode (
+           ;; ("README\\.md\\'" . gfm-mode) ;; github flavored version of markdown...
+           ("\\.md\\'"       . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode))
+    ;; :init (setq markdown-command "multimarkdown")
+    )
+#+END_SRC
+
+*** C/C++
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/setup-c-modes ()
+    "Do setup for C/C++ modes"
+    (define-key company-mode-map
+      [remap completion-at-point] 'counsel-irony)
+    (define-key company-mode-map
+      [remap complete-symbol] 'counsel-irony))
+
+  (defun aj/config--c/c++-modes ()
+    "Do configuration for C/C++ modes"
+    (c-set-offset 'substatement-open 0)
+    (c-set-offset 'arglist-intro '+)
+    (c-set-offset 'arglist-close 0)
+    ;; (c-set-offset 'block-close '-)
+    )
+
+  (add-hook 'c-mode-hook 'aj/config--c/c++-modes)
+  (add-hook 'c++-mode-hook 'aj/config--c/c++-modes)
+
+  ;; (add-hook 'c-mode-hook   'aj/setup-c-modes)
+  ;; (add-hook 'c++-mode-hook 'aj/setup-c-modes)
+#+END_SRC
+
+*** Elixir
+**** Packages
+***** [[https://github.com/tonini/alchemist.el][alchemist]]
+
+Install and setup =alchemist=.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--alchemist ()
+    "Do configuration for alchemist."
+    (setq alchemist-goto-elixir-source-dir "/Users/andrewjacobson/dev/elixir/")
+    (setq alchemist-hooks-compile-on-save t)
+    (setq alchemist-hooks-test-on-save t)
+    (add-hook 'elixir-mode-hook 'aj/hook--alchemist))
+
+  (defun aj/init--alchemist ()
+    (setq alchemist-hooks-compile-on-save t)
+    (setq alchemist-hooks-test-on-save t)
+    )
+
+  (defun aj/hook--alchemist ()
+    "Add alchemist hooks."
+    (add-hook 'before-save-hook 'elixir-format nil t))
+
+  (use-package alchemist
+    :ensure t
+    ;; :init (aj/init--alchemist)
+    :config (aj/config--alchemist))
+#+END_SRC
+
+*** Perl
+
+#+BEGIN_SRC emacs-lisp
+  ;; (defun aj/config--plsense ()
+  ;;   "Do configuration for plsense"
+  ;;       (add-to-list 'company-backends 'plsense))
+
+  ;; (use-package plsense
+  ;;   :ensure t
+  ;;   :config (plsense-config-default))
+#+END_SRC
+
+*** Go
+**** Packages
+***** [[https://github.com/dominikh/go-mode.el][go-mode]]
+
+Install and configure =go-mode=.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/hook--go ()
+    (add-hook 'before-save-hook 'gofmt-before-save)
+    (setq gofmt-command "goimports")
+    (if (not (string-match "go" compile-command))
+        (set (make-local-variable 'compile-command)
+             "go build -v && go test -v && go vet"))
+    (go-guru-hl-identifier-mode))
+
+  (use-package go-mode
+    :ensure t
+    :hook (go-mode . aj/hook--go)
+    :bind (:map go-mode-map
+           ("M-."   . godef-jump)
+           ("M-,"   . pop-tag-mark)
+           ("C-x P" . compile)
+           ("C-x p" . recompile)
+           ("M-]"   . next-error)
+           ("M-["   . previous-error))
+    :mode "\\.go\\'")
+#+END_SRC
+
+***** go-guru
+
+#+BEGIN_SRC emacs-lisp
+  (use-package go-guru :ensure t)
+#+END_SRC
+
+***** company-go
+
+Install and configure =company-go=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package company-go :ensure t)
+
+  (add-hook
+   'go-mode-hook
+   (lambda ()
+     (set (make-local-variable 'company-backends) '(company-go))))
+#+END_SRC
+
+* Misc
+** Learning
+
+Stole this bit from [[http://pages.sachachua.com/.emacs.d/Sacha.html][Sacha Chua]]. Essentially it pulls up the docs for a random, non-obsolete
+interactive Emacs function.
+
+I love the idea of learning 1 small new thing about Emacs everyday. I have recently been trying to step
+up my Emacs game and using this function to learn about new Emacs feature on a daily basis
+is exactly what I need :)
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/describe-random-interactive-function ()
+    (interactive)
+    "Show the documentation for a random interactive function.
+  Consider only documented, non-obsolete functions."
+    (let (result)
+      (mapatoms
+       (lambda (s)
+         (when (and (commandp s)
+                    (documentation s t)
+                    (null (get s 'byte-obsolete-info)))
+           (setq result (cons s result)))))
+      (describe-function (elt result (random (length result))))))
+#+END_SRC
+
+** IRC
+
+Function for logging onto irc.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/irc (&optional server port nick)
+    "Log into irc server.
+  Uses default values for SERVER, PORT and NICK if they are not supplied"
+    (interactive)
+    (erc
+     :server (or server "irc.freenode.net")
+     :port   (or port   "6667")
+     :nick   (or nick   "andyjac")))
+#+END_SRC
+
 * TODOS
-** TODO Move global keybindings to their own respective sections
+** TODO Move global keybindings to their own respective sections.
+** TODO Learn about [[https://github.com/abo-abo/hydra][hydras]] and [[https://www.emacswiki.org/emacs/KeyChord][key chords]] and see if they can be incorporated.
+** TODO In general, better keybinding patterns/namespaces would be good.

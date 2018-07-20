@@ -19,6 +19,7 @@
   (when (boundp 'package-pinned-packages)
     (setq package-pinned-packages '((org-plus-contrib . "org"))))
   (package-initialize)
+  ;; make sure package list is up-to-date
   (package-refresh-contents)
 
   ;; install use-package

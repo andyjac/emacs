@@ -4,19 +4,30 @@
 (setq mc/cmds-to-run-for-all
       '(
         beginning-of-visual-line
+        c-electric-colon
+        c-electric-delete-forward
+        c-electric-lt-gt
+        c-electric-paren
+        c-electric-semi&comma
         counsel-M-x
         dired-efap
         end-of-visual-line
         forward-to-word
+        indent-and-open-newline
         indent-for-tab-command
+        ivy-occur-delete-candidate
         org-self-insert-command
         sp-backward-delete-char
         sp-backward-kill-word
         sp-delete-char
         sp-forward-sexp
         sp-kill-hybrid-sexp
+        sp-splice-sexp
         ))
 
 (setq mc/cmds-to-run-once
       '(
+        sp-wrap-cancel
+        swiper
+        undefined
         ))
