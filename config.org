@@ -646,6 +646,42 @@ Setup dired-mode-hook.
   (add-hook 'dired-mode-hook 'aj/dired-mode-hook)
 #+END_SRC
 
+* Package
+
+Useful function for marking a single package for update
+on the =package-list=.
+
+taken from [[https://www.reddit.com/r/emacs/comments/6thg6j/command_to_mark_single_packages_for_upgrade/][here]].
+
+#+BEGIN_SRC emacs-lisp
+  (defun package-menu-upgrade-package ()
+    "Mark current package for upgrading (i.e. also mark obsolete version for deletion.)"
+    (interactive)
+    (when-let ((upgrades (package-menu--find-upgrades))
+               (description (tabulated-list-get-id))
+               (name (package-desc-name description))
+               (upgradable (cdr (assq name upgrades))))
+      ;; Package is upgradable
+      (save-excursion
+        (goto-char (point-min))
+        (while (not (eobp))
+          (let* ((current-description (tabulated-list-get-id))
+                 (current-name (package-desc-name current-description)))
+            (when (equal current-name name)
+              (cond ((equal description current-description)
+                     (package-menu-mark-install)
+                     (forward-line -1))
+                    (t (package-menu-mark-delete)))))
+          (forward-line 1)))))
+#+END_SRC
+
+Configuration for the =package= package.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package package
+    :bind (:map package-menu-mode-map ("t" . 'package-menu-upgrade-package)))
+#+END_SRC
+
 * Discoverability
 ** Packages
 *** [[https://github.com/abo-abo/swiper][ivy]]
