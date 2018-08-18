@@ -8,7 +8,7 @@ This is my Emacs config. There are many like it, but this one is mine.
 
 * Personal Info
 
-In case my emacs config gets lost
+In case my emacs config gets lost.
 
 #+BEGIN_SRC emacs-lisp
   (setq user-full-name "Andrew Jacobson"
@@ -177,7 +177,7 @@ Setup =load-path=.
 
 * Mac
 
-Stuff for Mac OS.
+Settings for OSX.
 
 #+BEGIN_SRC emacs-lisp
   (when (string-equal system-type 'darwin)
@@ -289,6 +289,11 @@ Some globally useful keybindings.
   (bind-key "C-c f r"    'aj/find-file-remote)
   (bind-key "C-c f s"    'aj/sudo-find-file)
   (bind-key "C-c f R"    'aj/sudo-find-file-remote)
+
+  ;; compilation
+  (bind-key "C-c C-c" nil)
+  (bind-key "C-c C-c" 'compile)
+  (bind-key "C-c C-r" 'recompile)
 #+END_SRC
 
 * Look & Feel
@@ -383,10 +388,10 @@ up and down in a buffer as well as duplicate selections.
 #+BEGIN_SRC emacs-lisp
   (use-package move-dup
     :ensure t
-    :bind (("C-S-p" . md/move-lines-up)
-           ("C-S-n" . md/move-lines-down)
-           ("M-P"   . md/duplicate-up)
-           ("M-N"   . md/duplicate-down)))
+    :bind (("C-S-p"   . md/move-lines-up)
+           ("C-S-n"   . md/move-lines-down)
+           ("C-c C-p" . md/duplicate-up)
+           ("C-c C-n" . md/duplicate-down)))
 #+END_SRC
 
 *** [[https://github.com/re5et/smart-indent-rigidly][smart-indent-rigidly]]
@@ -758,15 +763,52 @@ Install and setup ivy/swiper/counsel for discoverability completion.
 *** [[https://github.com/abingham/emacs-ycmd][ycmd]]
 
 #+BEGIN_SRC emacs-lisp
+  (defvar aj/ycmd-server-command '("python" "-u" "/Users/andrewjacobson/.emacs.d/misc/ycmd/ycmd"))
+  (defvar aj/ycmd-extra-conf-whitelist '("~/.ycm_extra_conf.py"))
+  (defvar aj/ycmd-global-config "~/.ycm_extra_conf.py")
+  (defvar aj/python-location (executable-find (nth 0 aj/ycmd-server-command)))
+
+  (if (not aj/python-location)
+      (message (concat "Could not start YouCompleteMeDaemon because the python executable"
+                       "could not be found.\nSpecified executable is: '%s'\n"
+                       "Please set aj/ycmd-server-command appropriately in ~/.emacs.el.\n")
+               (nth 0 aj/ycmd-server-command)))
+
+  (if (not (file-directory-p (nth 1 aj/ycmd-server-command)))
+      (message (concat "Could not YouCompleteMeDaemon because the specified"
+                       "directory does not exist.\nSpecified directory is: '%s'\n"
+                       "Please set aj/ycmd-server-command appropriately in ~/.emacs.el.\n")
+               (nth 1 aj/ycmd-server-command)))
+
   (defun aj/config--ycmd ()
-    "Do configuration for ycmd."
-    (set-variable 'ycmd-server-command '("python" "/Users/andrewjacobson/.emacs.d/misc/ycmd/ycmd"))
-    (set-variable 'ycmd-global-config (expand-file-name "~/.ycm_conf.py")))
+    "Do config for ycmd."
+    (message "aj/config--ycmd called.")
+    (set-variable 'ycmd-server-command aj/ycmd-server-command)
+    (set-variable 'ycmd-extra-conf-whitelist aj/ycmd-extra-conf-whitelist)
+    (set-variable 'ycmd-global-config aj/ycmd-global-config)
+    (setq ycmd-request-msg-level -1)
+    (setq ycmd-force-semantic-completion t)
+    (require 'ycmd-eldoc)
+    (add-hook 'ycmd-mode-hook 'ycmd-eldoc-setup)
+    (global-ycmd-mode))
+
+  ;; (if (and aj/python-location (file-directory-p (nth 1 aj/ycmd-server-command))))
 
   (use-package ycmd
     :ensure t
-    :hook (prog-mode . ycmd-mode)
     :config (aj/config--ycmd))
+
+  (use-package flycheck-ycmd
+    :ensure t
+    :after (ycmd)
+    :hook (c-mode-common-hook . flycheck-ycmd-setup)
+    ;; :init (add-hook 'c-mode-common-hook 'flycheck-ycmd-setup)
+    )
+
+  (use-package company-ycmd
+    :ensure t
+    :after (ycmd)
+    :config (company-ycmd-setup))
 #+END_SRC
 
 *** [[http://company-mode.github.io/][company]]
@@ -780,9 +822,18 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
     (setq company-idle-delay 0.1)
     (setq company-minimum-prefix-length 2)
     (setq company-tooltip-limit 10)
-    (setq company-backends
-          (mapcar #'company-mode/backend-with-yas company-backends))
+    ;; (setq company-backends
+    ;;       (mapcar #'company-mode/backend-with-yas company-backends))
     (setq company-show-numbers t)
+
+    ;; remove unused backends
+    (setq company-backends (delete 'company-semantic company-backends))
+    (setq company-backends (delete 'company-eclim company-backends))
+    (setq company-backends (delete 'company-xcode company-backends))
+    (setq company-backends (delete 'company-clang company-backends))
+    (setq company-backends (delete 'company-bbdb company-backends))
+    (setq company-backends (delete 'company-oddmuse company-backends))
+
     (aj/company--setup-complete-by-number-keybindings))
 
   ;; https://oremacs.com/2017/12/27/company-numbers/
@@ -835,15 +886,32 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
 *** [[https://github.com/abingham/emacs-ycmd/blob/master/company-ycmd.el][company-ycmd]]
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/config--company-ycmd ()
-    "Do configuration for company-ycmd"
-    (add-to-list
-     'company-backends (company-mode/backend-with-yas 'company-ycmd)))
+  ;; (defun aj/config--company-ycmd ()
+  ;;   "Do configuration for company-ycmd"
+  ;;   (add-to-list
+  ;;    'company-backends (company-mode/backend-with-yas 'company-ycmd)))
 
-  (use-package company-ycmd
+  ;; (use-package company-ycmd
+  ;;   :ensure t
+  ;;   :init (company-ycmd-setup)
+  ;;   :config (aj/config--company-ycmd))
+#+END_SRC
+
+*** [[https://github.com/Sarcasm/irony-mode][irony]]
+
+Install and configure =irony-mode=.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/hook--irony ()
+    "Hook for `irony-mode'."
+    (print "setting up compile options...")
+    (irony-cdb-autosetup-compile-options))
+
+  (use-package irony
     :ensure t
-    :init (company-ycmd-setup)
-    :config (aj/config--company-ycmd))
+    :hook (
+           ;; ((c-mode c++-mode) . irony-mode)
+           (irony-mode        . aj/hook--irony)))
 #+END_SRC
 
 *** [[https://github.com/Sarcasm/company-irony][company-irony]]
@@ -851,18 +919,34 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
 Install =company-irony= and add it to the =company-backends= list.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package company-irony
-    :ensure t
-    :config (add-to-list 'company-backends 'company-irony))
+  ;; (use-package company-irony
+  ;;   :ensure t
+  ;;   :config (add-to-list 'company-backends 'company-irony))
 #+END_SRC
 
 *** [[https://github.com/joaotavora/yasnippet][yasnippet]]
 
+Install =yasnippet= and =yasnippet= related packages.
+
 #+BEGIN_SRC emacs-lisp
+  (defun aj/config--yasnippet ()
+    "Do configuration for `yasnippet'."
+    (yas-global-mode t)
+    (yas-reload-all))
+
   (use-package yasnippet
     :ensure t
     :diminish yas-minor-mode
-    :init (yas-global-mode t))
+    :config (aj/config--yasnippet))
+
+  (use-package yasnippet-snippets
+    :ensure t
+    :after yasnippet
+    :config (yas-reload-all))
+
+  (use-package company-yasnippet
+    :after yasnippet
+    :bind ("C-M-y" . company-yasnippet))
 #+END_SRC
 
 * Programming
@@ -918,6 +1002,9 @@ Install and setup smartparens to behave similarly to paredit.
     ;; (setq sp-hybrid-kill-excessive-whitespace t)
     )
 
+  (defun aj/init--smartparens ()
+    (smartparens-global-mode t))
+
   (use-package smartparens
     :ensure t
     :diminish
@@ -933,7 +1020,7 @@ Install and setup smartparens to behave similarly to paredit.
            ("C-}"   . sp-forward-barf-sexp)
            ("C-("   . sp-backward-slurp-sexp)
            ("C-{"   . sp-backward-barf-sexp))
-    :init (smartparens-global-mode t))
+    :init (aj/init--smartparens))
 #+END_SRC
 
 **** [[https://github.com/bbatsov/projectile][projectile]]
@@ -945,6 +1032,15 @@ Install and setup projectile for project management.
     :ensure t
     :custom (projectile-completion-system 'ivy "Use ivy for projectile completion")
     :hook (prog-mode . projectile-mode))
+
+  (defun aj/setup-javascript-project ()
+    "Do projectile setup for a JavaScript project"
+    (setq projectile-test-cmd #'mocha-test-project))
+
+  (add-hook
+   'projectile-mode
+   (lambda ()
+     (add-hook 'js2-mode 'aj/setup-javascript-project)))
 #+END_SRC
 
 **** [[https://github.com/ericdanan/counsel-projectile][counsel-projectile]]
@@ -1008,6 +1104,15 @@ Install and configure =dumb-jump=.
     :config (setq dumb-jump-selector 'ivy))
 #+END_SRC
 
+**** [[https://github.com/realgud/realgud][realgud]]
+
+Install and configure =realgud=, a front end for a variety of external debuggers.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package realgud
+    :ensure t)
+#+END_SRC
+
 ** Languages
 *** JavaScript
 **** Packages
@@ -1018,6 +1123,7 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
 #+BEGIN_SRC emacs-lisp
   (defun aj/setup-js2 ()
     "Do configuration for js2-mode."
+    (message "Settting up js2-mode...")
     (setq js2-basic-offset 2)
     (setq js2-mode-indent-ignore-first-tab t)
     (setq js2-highlight-external-variables nil)
@@ -1030,7 +1136,7 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
 
   (use-package js2-mode
     :ensure t
-    :mode "\\.js\\'"
+    :mode ("\\.js\\'" . js2-mode)
     :hook (js2-mode . aj/setup-js2))
 #+END_SRC
 
@@ -1076,7 +1182,25 @@ js2-mode is an improved major mode for editing JavaScript. Let's install and con
     :diminish tern-mode
     :config (aj/config--tern))
 
-  (add-hook 'js2-mode-hook #'tern-mode)
+  ;; (add-hook 'js2-mode-hook #'tern-mode)
+#+END_SRC
+
+***** [[https://github.com/scottaj/mocha.el][mocha]]
+
+Install and configure =mocha.el= for running mocha tests inside of emacs.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--mocha ()
+    "Do configuration for `mocha.el'."
+    (setq mocha-which-node "/Users/andrewjacobson/.nvm/versions/node/v9.10.1/bin/node")
+    (setq mocha-command "node_modules/.bin/mocha")
+    (setq mocha-options "--require @babel/register --recursive --colors --reporter dot -t 5000")
+    (setq mocha-project-test-directory "test")
+    (setq mocha-environment-variables "NODE_ENV=test"))
+
+  (use-package mocha
+    :ensure t
+    :config (aj/config--mocha))
 #+END_SRC
 
 *** TypeScript
@@ -1108,7 +1232,7 @@ Do setup for =typescript-mode= and =tide=.
       :hook (typescript-mode . aj/setup-typescript)))
 #+END_SRC
 
-*** Web
+*** Web (jsx/tsx)
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/setup-web-mode ()
@@ -1143,6 +1267,9 @@ Install and setup =markdown-mode=.
 #+END_SRC
 
 *** C/C++
+**** Config
+
+Do basic configuration for C/C++ modes.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/setup-c-modes ()
@@ -1154,17 +1281,170 @@ Install and setup =markdown-mode=.
 
   (defun aj/config--c/c++-modes ()
     "Do configuration for C/C++ modes"
+    (setq c-basic-offset 4)
     (c-set-offset 'substatement-open 0)
     (c-set-offset 'arglist-intro '+)
-    (c-set-offset 'arglist-close 0)
-    ;; (c-set-offset 'block-close '-)
-    )
+    (c-set-offset 'arglist-close 0))
 
   (add-hook 'c-mode-hook 'aj/config--c/c++-modes)
   (add-hook 'c++-mode-hook 'aj/config--c/c++-modes)
 
   ;; (add-hook 'c-mode-hook   'aj/setup-c-modes)
   ;; (add-hook 'c++-mode-hook 'aj/setup-c-modes)
+#+END_SRC
+
+**** Packages
+***** cmake-mode
+
+Install and configure =cmake-mode= for editing =CMakeLists.txt= files.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package cmake-mode
+    :ensure t
+    :mode "\\CMakeLists.txt\\'"
+    :hook (cmake-mode . (lambda () (add-to-list 'company-backends 'company-cmake))))
+#+END_SRC
+
+***** [[https://github.com/redguardtoo/counsel-etags][counsel-etags]]
+
+Install =counsel-etags=, a Ctags front-end built with Ivy completion.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--counsel-etags ()
+    "Do configuration for `counsel-etags'."
+    (setq tags-revert-without-query t)
+    (setq large-file-warning-threshold nil)
+    (setq counsel-etags-max-file-size 800)
+    (setq counsel-etags-update-interval 180)
+    (add-to-list 'counsel-etags-ignore-directories '"build*")
+    (add-to-list 'counsel-etags-ignore-directories '".vscode")
+    (add-to-list 'counsel-etags-ignore-filenames   '".clang-format")
+    (add-to-list 'counsel-etags-ignore-directories "build_clang")
+    (add-to-list 'counsel-etags-ignore-directories "build_clang")
+    (add-to-list 'counsel-etags-ignore-filenames   "TAGS")
+    (add-to-list 'counsel-etags-ignore-filenames   "*.json")
+    (add-hook
+     'prog-mode-hook
+     (lambda ()
+       (add-hook
+        'after-save-hook
+        (lambda ()
+          (counsel-etags-virtual-update-tags))))))
+
+  ;; taken from: https://gist.github.com/nilsdeppe/7645c096d93b005458d97d6874a91ea9
+  (defun my-scan-dir (src-dir &optional force)
+    "Create tags file from SRC-DIR. \
+       If FORCE is t, the commmand is executed without \
+       checking the timer."
+    (let* ((find-pg (or
+                     counsel-etags-find-program
+                     (counsel-etags-guess-program "find")))
+           (ctags-pg (or
+                      counsel-etags-tags-program
+                      (format "%s -e -L" (counsel-etags-guess-program
+                                          "ctags"))))
+           (default-directory src-dir)
+           ;; run find&ctags to create TAGS
+           (cmd (format
+                 "%s . \\( %s \\) -prune -o -type f -not -size +%sk %s | %s -"
+                 find-pg
+                 (mapconcat
+                  (lambda (p)
+                    (format "-iwholename \"*%s*\"" p))
+                  counsel-etags-ignore-directories " -or ")
+                 counsel-etags-max-file-size
+                 (mapconcat (lambda (n)
+                              (format "-not -name \"%s\"" n))
+                            counsel-etags-ignore-filenames " ")
+                 ctags-pg))
+           (tags-file (concat (file-name-as-directory src-dir) "TAGS"))
+           (doit (or force (not (file-exists-p tags-file)))))
+      ;; always update cli options
+      (when doit
+        (message "%s at %s" cmd default-directory)
+        (shell-command cmd)
+        (visit-tags-table tags-file t))))
+
+  (defun counsel-etags-update-tags-backend ()
+    (interactive)
+    (let* ((tags-file (counsel-etags-locate-tags-file)))
+      (when tags-file
+        (my-scan-dir (file-name-directory tags-file) t)
+        (run-hook-with-args
+         'counsel-etags-after-update-tags-hook tags-file)
+        (unless counsel-etags-quiet-when-updating-tags
+          (message "%s is updated!" tags-file)))))
+
+  (use-package counsel-etags
+    :ensure t
+    :config (aj/config--counsel-etags)
+    :bind (:map c++-mode-map
+                ("M-."     . 'counsel-etags-find-tag-at-point)
+                ("C-c t"   . nil)
+                ("C-c t g" . 'counsel-etags-grep-symbol-at-point)
+                ("C-c t f" . 'counsel-etags-find-tag)
+                :map c-mode-map
+                ("M-."     . 'counsel-etags-find-tag-at-point)
+                ("C-c t"   . nil)
+                ("C-c t g" . 'counsel-etags-grep-symbol-at-point)
+                ("C-c t f" . 'counsel-etags-find-tag)))
+#+END_SRC
+
+***** [[https://github.com/sonatard/clang-format][clang-format]]
+
+Install and configure =clang-format=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package clang-format
+    :ensure t
+    :config (setq clang-format-style "file"))
+#+END_SRC
+
+Custom function for running =clang-format= inside of a =projectile= project on save.
+
+Taken from: https://eklitzke.org/smarter-emacs-clang-format
+
+#+BEGIN_SRC emacs-lisp
+  (defun clang-format-buffer-smart ()
+    "Reformat buffer if .clang-format exists in the projectile root."
+    (when (f-exists? (expand-file-name ".clang-format" (projectile-project-root)))
+      (clang-format-buffer)))
+
+  (add-hook
+   'c++-mode-hook
+   (lambda ()
+     (add-hook 'before-save-hook 'clang-format-buffer-smart nil t)))
+#+END_SRC
+
+***** [[https://github.com/ludwigpacifici/modern-cpp-font-lock][modern-cpp-font-lock]]
+
+Install and configure =modern-cpp-font-lock= to enable better C++ syntax highlighting.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package modern-cpp-font-lock
+    :ensure t
+    :hook (c++-mode . modern-c++-font-lock-mode)
+    ;; :config (modern-c++-font-lock-global-mode t)
+    )
+#+END_SRC
+
+***** rtags
+
+Install and configure =rtags=.
+
+#+BEGIN_SRC emacs-lisp
+  ;;(defun aj/config--rtags ()
+  ;;  "Do configuration for `rtags'."
+  ;;  (unless (rtags-executable-find "rc") (error "Binary rc is not installed"))
+  ;;  (unless (rtags-executable-find "rdm") (error "Binary rdm is not installed"))
+  ;;  (message "enabling standard rtags keybindings...")
+  ;;  (rtags-enable-standard-keybindings)
+  ;;  (message "bindings enabled.")
+  ;;  (add-hook 'kill-emacs-hook 'rtags-quit-rdm))
+
+  ;;(use-package rtags
+  ;;  :ensure t
+  ;;  :config (aj/config--rtags))
 #+END_SRC
 
 *** Elixir
@@ -1177,14 +1457,10 @@ Install and setup =alchemist=.
   (defun aj/config--alchemist ()
     "Do configuration for alchemist."
     (setq alchemist-goto-elixir-source-dir "/Users/andrewjacobson/dev/elixir/")
+    (setq alchemist-goto-erlang-source-dir "/Users/andrewjacobson/dev/otp/lib/")
     (setq alchemist-hooks-compile-on-save t)
     (setq alchemist-hooks-test-on-save t)
     (add-hook 'elixir-mode-hook 'aj/hook--alchemist))
-
-  (defun aj/init--alchemist ()
-    (setq alchemist-hooks-compile-on-save t)
-    (setq alchemist-hooks-test-on-save t)
-    )
 
   (defun aj/hook--alchemist ()
     "Add alchemist hooks."
@@ -1192,8 +1468,9 @@ Install and setup =alchemist=.
 
   (use-package alchemist
     :ensure t
-    ;; :init (aj/init--alchemist)
-    :config (aj/config--alchemist))
+    :config (aj/config--alchemist)
+    :bind (:map alchemist-mode-map
+                ("C-c a p n" . 'alchemist-project-create-file)))
 #+END_SRC
 
 *** Perl
@@ -1299,3 +1576,5 @@ Function for logging onto irc.
 ** TODO Move global keybindings to their own respective sections.
 ** TODO Learn about [[https://github.com/abo-abo/hydra][hydras]] and [[https://www.emacswiki.org/emacs/KeyChord][key chords]] and see if they can be incorporated.
 ** TODO In general, better keybinding patterns/namespaces would be good.
+** TODO Finish implementing [[https://nilsdeppe.com/posts/emacs-c++-ide2][these]] C/C++ IDE configurations
+** TODO Also found [[https://nilsdeppe.com/posts/emacs-c++-ide2][here]], try running Emacs as a server (deamon) and using =emacsclient= for a quicker startup (potentially)

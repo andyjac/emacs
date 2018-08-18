@@ -9,6 +9,7 @@
         c-electric-lt-gt
         c-electric-paren
         c-electric-semi&comma
+        c-indent-line-or-region
         counsel-M-x
         dired-efap
         end-of-visual-line
@@ -16,7 +17,11 @@
         indent-and-open-newline
         indent-for-tab-command
         ivy-occur-delete-candidate
+        kill-region
+        kill-visual-line
+        org-delete-char
         org-self-insert-command
+        smart-rigid-unindent
         sp-backward-delete-char
         sp-backward-kill-word
         sp-delete-char
@@ -27,6 +32,8 @@
 
 (setq mc/cmds-to-run-once
       '(
+        describe-key
+        next-frame-in-window
         sp-wrap-cancel
         swiper
         undefined

@@ -1,4 +1,4 @@
-;; -*- emacs-lisp -*- <18/07/19 17:02:39 /Users/andrewjacobson/.emacs.d/tramp>
+;; -*- emacs-lisp -*- <18/08/05 10:59:06 /Users/andrewjacobson/.emacs.d/tramp>
 ;; Tramp connection history.  Don't change this file.
 ;; You can delete it, forcing Tramp to reapply the checks.
 
@@ -36,7 +36,10 @@
   ("id" "/usr/bin/id")
   ("gid-string" "wheel")
   ("gid-integer" 0)
-  ("uid-integer" 0))
+  ("uid-integer" 0)
+  ("tmpdir" "/tmp")
+  ("touch-t" t)
+  ("touch" "\\touch"))
  (["ssh" "ubuntu" "stun" nil nil]
   ("uname" "Linux 4.4.0-87-generic")
   ("locale" "LC_ALL=en_US.utf8")
@@ -135,6 +138,4 @@
   ("uid-integer" 1000)
   ("ls" "/bin/ls --color=never")
   ("ls-dired" t)
-  ("trash" nil))
- (["sudo" "root" "stun" nil nil]
-  nil))
+  ("trash" nil)))
