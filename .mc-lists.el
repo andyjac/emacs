@@ -3,15 +3,20 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        aj/force-save
         beginning-of-visual-line
         c-electric-colon
         c-electric-delete-forward
         c-electric-lt-gt
         c-electric-paren
         c-electric-semi&comma
+        c-electric-star
         c-indent-line-or-region
         counsel-M-x
+        dired-do-rename
         dired-efap
+        dired-flag-file-deletion
+        dired-mark
         end-of-visual-line
         forward-to-word
         indent-and-open-newline
@@ -28,13 +33,16 @@
         sp-forward-sexp
         sp-kill-hybrid-sexp
         sp-splice-sexp
+        typescript-insert-and-indent
         ))
 
 (setq mc/cmds-to-run-once
       '(
         describe-key
         next-frame-in-window
+        smartscan-symbol-go-forward
+        sp-backward-slurp-sexp
         sp-wrap-cancel
-        swiper
+        swiper-mc
         undefined
         ))

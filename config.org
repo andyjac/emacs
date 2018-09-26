@@ -8,8 +8,6 @@ This is my Emacs config. There are many like it, but this one is mine.
 
 * Personal Info
 
-In case my emacs config gets lost.
-
 #+BEGIN_SRC emacs-lisp
   (setq user-full-name "Andrew Jacobson"
         user-mail-address "andrew.isaac.jacobson@gmail.com")
@@ -17,7 +15,7 @@ In case my emacs config gets lost.
 
 * Custom File
 
-Load the auto-generated =custom.el= file from the dotemacs dir.
+Load the auto-generated ~custom.el~ file from the dotemacs directory.
 
 #+BEGIN_SRC emacs-lisp
   (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
@@ -27,6 +25,9 @@ Load the auto-generated =custom.el= file from the dotemacs dir.
 * Basic Configuration
 ** Require newline at EOF
 
+Setting ~require-final-newline~ to ~t~ tells emacs to add a newline
+to a file on save if it doesn't already have one.
+
 #+BEGIN_SRC emacs-lisp
   (setq require-final-newline t)
   (setq require-trailing-newline t)
@@ -34,7 +35,7 @@ Load the auto-generated =custom.el= file from the dotemacs dir.
 
 ** Allow 'y' or 'n' answers
 
-Typing 'yes' or 'no' is tedious.
+Typing 'yes' or 'no' is tedious. Tell emacs to allow 'y' and 'n' instead.
 
 #+BEGIN_SRC emacs-lisp
   (defalias 'yes-or-no-p 'y-or-n-p)
@@ -63,7 +64,7 @@ UTF-8. UTF-8, everywhere.
 
 ** Remove cursor blink
 
-The cursor blink annoys me. This makes it stop.
+No blink.
 
 #+BEGIN_SRC emacs-lisp
   (blink-cursor-mode -1)
@@ -89,7 +90,7 @@ Highlight opening/closing paren when cursor is on/after opening/closing paren re
 
 ** Delete region when typing
 
-This allows me to type over a selected region, which is nice.
+Delete selected region when typing, like you'd expect.
 
 #+BEGIN_SRC emacs-lisp
   (delete-selection-mode t)
@@ -97,7 +98,7 @@ This allows me to type over a selected region, which is nice.
 
 ** No bell
 
-Turn off audible and visible bell since it is annoying.
+Shhhh.
 
 #+BEGIN_SRC emacs-lisp
   (setq visible-bell nil)
@@ -161,10 +162,10 @@ of this file.
 
 ** Load path
 
-Setup =load-path=.
+Setup ~load-path~.
 
 #+BEGIN_SRC emacs-lisp
-  (add-to-list 'load-path "~/.emacs.d/misc/")
+  (add-to-list 'load-path "~/.emacs.d/vendor/")
 #+END_SRC
 
 ** Remove annoying UI
@@ -177,7 +178,7 @@ Setup =load-path=.
 
 * Mac
 
-Settings for OSX.
+Settings for MacOS.
 
 #+BEGIN_SRC emacs-lisp
   (when (string-equal system-type 'darwin)
@@ -197,6 +198,9 @@ Settings for OSX.
 
 * Functions
 ** force-save
+
+Function to save buffer, even when it has not been modified.
+
 #+BEGIN_SRC emacs-lisp
   (defun aj/force-save ()
     (interactive)
@@ -220,7 +224,7 @@ Open a file on a remote server via ssh.
 
 ** sudo-find-file
 
-Open a local file with sudo.
+Open a local file using sudo.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/sudo-find-file ()
@@ -232,7 +236,7 @@ Open a local file with sudo.
 ** sudo-find-file-remote
 
 A tramp host completion function, which provides an ivy list
-of =user@host= completions.
+of ~user@host~ completions.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/ivy--tramp-host-completion (method &optional handler)
@@ -247,7 +251,7 @@ of =user@host= completions.
                 :action (or handler nil))))
 #+END_SRC
 
-=sudo-find-file-remote= definition.
+~sudo-find-file-remote~ definition.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/sudo-find-file-remote ()
@@ -266,7 +270,7 @@ Some globally useful keybindings.
 
 #+BEGIN_SRC emacs-lisp
   ;; allow C-j to be used in place of C-x
-  (define-key key-translation-map "\C-j" "\C-x")
+  ;; (define-key key-translation-map "\C-j" "\C-x")
 
   ;; make room for prefix
   (bind-key "M-j"        nil)
@@ -339,15 +343,11 @@ Should maybe try out some other fonts too...
 #+BEGIN_SRC emacs-lisp
   ;; tomorrow themes
   (use-package color-theme-sanityinc-tomorrow
-    :ensure t
-    ;; :config (load-theme 'sanityinc-tomorrow-night t)
-    )
+    :ensure t)
 
   ;; base16 themes
   (use-package base16-theme
-    :ensure t
-    ;; :config (load-theme 'base16-default-dark t)
-    )
+    :ensure t)
 
   ;; gruvbox themes
   (use-package gruvbox-theme
@@ -383,7 +383,7 @@ Does just what it says: gives you multiple cursors in a buffer.
 *** [[https://github.com/wyuenho/move-dup][move-dup]]
 
 Handy little package I like, which allows me to move selections
-up and down in a buffer as well as duplicate selections.
+up and down in a buffer as well as duplicate selections up and down.
 
 #+BEGIN_SRC emacs-lisp
   (use-package move-dup
@@ -446,9 +446,7 @@ Quickly jump between symbols in a given buffer.
     (indent-and-open-newline t))
 #+END_SRC
 
-*** Indent whole damn buffer
-
-Wouldn't be caught dead without this one.
+*** Indent entire buffer
 
 #+BEGIN_SRC emacs-lisp
   (defun indent-buffer ()
@@ -622,15 +620,17 @@ Helper function that kills the currently focused buffer. Pretty self explanatory
 ** Packages
 *** [[https://github.com/juan-leon/dired-efap][dired-efap]]
 
-dired-efap allows me to edit a file name in place while in a dired buffer.
+Install ~direc-efap~ to edit filenames in place while in ~dired-mode~.
 
 #+BEGIN_SRC emacs-lisp
   (use-package dired-efap
     :ensure t
-    :config (setq dired-efap-initial-filename-selection nil))
+    :config (setq dired-efap-initial-filename-selection 'no-extension))
 #+END_SRC
 
 *** dired-details
+
+Install ~dired-details~ for a more minimal ~dired-mode~ view.
 
 #+BEGIN_SRC emacs-lisp
   (require 'dired-details)
@@ -640,7 +640,7 @@ dired-efap allows me to edit a file name in place while in a dired buffer.
 
 ** Hooks
 
-Setup dired-mode-hook.
+Setup ~dired-mode-hook~.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/dired-mode-hook ()
@@ -653,10 +653,7 @@ Setup dired-mode-hook.
 
 * Package
 
-Useful function for marking a single package for update
-on the =package-list=.
-
-taken from [[https://www.reddit.com/r/emacs/comments/6thg6j/command_to_mark_single_packages_for_upgrade/][here]].
+Useful function for marking a single package for upgrade ([[https:www.reddit.com/r/emacs/comments/6thg6j/command_to_mark_single_packages_for_upgrade/][Source]]).
 
 #+BEGIN_SRC emacs-lisp
   (defun package-menu-upgrade-package ()
@@ -680,7 +677,7 @@ taken from [[https://www.reddit.com/r/emacs/comments/6thg6j/command_to_mark_sing
           (forward-line 1)))))
 #+END_SRC
 
-Configuration for the =package= package.
+Configuration for the ~package~ package.
 
 #+BEGIN_SRC emacs-lisp
   (use-package package
@@ -739,9 +736,38 @@ Install and setup ivy/swiper/counsel for discoverability completion.
   (bind-key "C-c s j" 'counsel-git-grep)
   (bind-key "C-c s a" 'counsel-ag)
   (bind-key "C-c s l" 'counsel-locate)
+
+  (bind-key "C-*"     'swiper-mc)
+#+END_SRC
+
+Useful ivy/swiper/counsel functions.
+
+swiper multiple-cursors (from: https://oremacs.com/2015/10/14/swiper-mc/)
+
+#+BEGIN_SRC emacs-lisp
+  ;; (defun aj/swiper-mc ()
+  ;;   (interactive)
+  ;;   (unless (require 'multiple-cursors nil t)
+  ;;     (error "multiple-cursors isn't installed"))
+  ;;   (let ((cands (nreverse ivy--old-cands)))
+  ;;     (unless (string= ivy-text "")
+  ;;       (ivy-set-action
+  ;;        (lambda (_)
+  ;;          (let (cand)
+  ;;            (while (setq cand (pop cands))
+  ;;              (swiper--action cand)
+  ;;              (when cands
+  ;;                (mc/create-fake-cursor-at-point))))
+  ;;          (mc/maybe-multiple-cursors-mode)))
+  ;;       (setq ivy-exit 'done)
+  ;;       (exit-minibuffer))))
+
+  ;; (bind-key "C-*" 'aj/swiper-mc)
 #+END_SRC
 
 *** [[https://github.com/justbur/emacs-which-key][which-key]]
+
+Install ~which-key~ for incremental keystroke discoverability.
 
 #+BEGIN_SRC emacs-lisp
   (use-package which-key
@@ -762,10 +788,12 @@ Install and setup ivy/swiper/counsel for discoverability completion.
 
 *** [[https://github.com/abingham/emacs-ycmd][ycmd]]
 
+Install and configure ~ycmd~ for completion.
+
 #+BEGIN_SRC emacs-lisp
-  (defvar aj/ycmd-server-command '("python" "-u" "/Users/andrewjacobson/.emacs.d/misc/ycmd/ycmd"))
-  (defvar aj/ycmd-extra-conf-whitelist '("~/.ycm_extra_conf.py"))
-  (defvar aj/ycmd-global-config "~/.ycm_extra_conf.py")
+  (defvar aj/ycmd-server-command '("python" "-u" "/Users/andrewjacobson/.emacs.d/vendor/ycmd/ycmd"))
+  (defvar aj/ycmd-extra-conf-whitelist '("~/.ycm_conf.py"))
+  (defvar aj/ycmd-global-config "~/.ycm_conf.py")
   (defvar aj/python-location (executable-find (nth 0 aj/ycmd-server-command)))
 
   (if (not aj/python-location)
@@ -774,15 +802,14 @@ Install and setup ivy/swiper/counsel for discoverability completion.
                        "Please set aj/ycmd-server-command appropriately in ~/.emacs.el.\n")
                (nth 0 aj/ycmd-server-command)))
 
-  (if (not (file-directory-p (nth 1 aj/ycmd-server-command)))
+  (if (not (file-directory-p (nth 2 aj/ycmd-server-command)))
       (message (concat "Could not YouCompleteMeDaemon because the specified"
                        "directory does not exist.\nSpecified directory is: '%s'\n"
                        "Please set aj/ycmd-server-command appropriately in ~/.emacs.el.\n")
-               (nth 1 aj/ycmd-server-command)))
+               (nth 2 aj/ycmd-server-command)))
 
   (defun aj/config--ycmd ()
     "Do config for ycmd."
-    (message "aj/config--ycmd called.")
     (set-variable 'ycmd-server-command aj/ycmd-server-command)
     (set-variable 'ycmd-extra-conf-whitelist aj/ycmd-extra-conf-whitelist)
     (set-variable 'ycmd-global-config aj/ycmd-global-config)
@@ -790,9 +817,8 @@ Install and setup ivy/swiper/counsel for discoverability completion.
     (setq ycmd-force-semantic-completion t)
     (require 'ycmd-eldoc)
     (add-hook 'ycmd-mode-hook 'ycmd-eldoc-setup)
-    (global-ycmd-mode))
-
-  ;; (if (and aj/python-location (file-directory-p (nth 1 aj/ycmd-server-command))))
+    (add-hook 'c-mode-hook 'ycmd-mode)
+    (add-hook 'c++-mode-hook 'ycmd-mode))
 
   (use-package ycmd
     :ensure t
@@ -801,9 +827,7 @@ Install and setup ivy/swiper/counsel for discoverability completion.
   (use-package flycheck-ycmd
     :ensure t
     :after (ycmd)
-    :hook (c-mode-common-hook . flycheck-ycmd-setup)
-    ;; :init (add-hook 'c-mode-common-hook 'flycheck-ycmd-setup)
-    )
+    :hook (c-mode-common-hook . flycheck-ycmd-setup))
 
   (use-package company-ycmd
     :ensure t
@@ -886,15 +910,15 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
 *** [[https://github.com/abingham/emacs-ycmd/blob/master/company-ycmd.el][company-ycmd]]
 
 #+BEGIN_SRC emacs-lisp
-  ;; (defun aj/config--company-ycmd ()
-  ;;   "Do configuration for company-ycmd"
-  ;;   (add-to-list
-  ;;    'company-backends (company-mode/backend-with-yas 'company-ycmd)))
+  (defun aj/config--company-ycmd ()
+    "Do configuration for company-ycmd"
+    (push '(company-ycmd :with company-yasnippet company-dabbrev-code) company-backends))
 
-  ;; (use-package company-ycmd
-  ;;   :ensure t
-  ;;   :init (company-ycmd-setup)
-  ;;   :config (aj/config--company-ycmd))
+  (use-package company-ycmd
+    :ensure t
+    :after ycmd
+    ;; :init (company-ycmd-setup)
+    :config (aj/config--company-ycmd))
 #+END_SRC
 
 *** [[https://github.com/Sarcasm/irony-mode][irony]]
@@ -1003,12 +1027,16 @@ Install and setup smartparens to behave similarly to paredit.
     )
 
   (defun aj/init--smartparens ()
-    (smartparens-global-mode t))
+    (smartparens-global-mode t)
+    (mapcar
+     (lambda (hook)
+       (add-hook hook 'smartparens-strict-mode)) '(emacs-lisp-mode-hook lisp-mode-hook clojure-mode-hook)))
 
   (use-package smartparens
     :ensure t
     :diminish
     :config (aj/config--smartparens)
+    :init (aj/init--smartparens)
     :bind (("C-M-a" . sp-beginning-of-sexp)
            ("C-M-e" . sp-end-of-sexp)
            ("C-M-p" . sp-up-sexp)
@@ -1019,8 +1047,7 @@ Install and setup smartparens to behave similarly to paredit.
            ("C-)"   . sp-forward-slurp-sexp)
            ("C-}"   . sp-forward-barf-sexp)
            ("C-("   . sp-backward-slurp-sexp)
-           ("C-{"   . sp-backward-barf-sexp))
-    :init (aj/init--smartparens))
+           ("C-{"   . sp-backward-barf-sexp)))
 #+END_SRC
 
 **** [[https://github.com/bbatsov/projectile][projectile]]
@@ -1113,159 +1140,22 @@ Install and configure =realgud=, a front end for a variety of external debuggers
     :ensure t)
 #+END_SRC
 
+**** [[https://github.com/kyagi/shell-pop-el][shell-pop]]
+
+Install and configure ~shell-pop~, a package for quickly popping up a shell in Emacs.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package shell-pop
+    :ensure t
+    :bind (("C-." . shell-pop))
+    :config
+    (setq shell-pop-shell-type (quote ("ansi-term" "*ansi-term*" (lambda nil (ansi-term shell-pop-term-shell)))))
+    (setq shell-pop-term-shell "/bin/zsh")
+    ;; need to do this manually or not picked up by `shell-pop'
+    (shell-pop--set-shell-type 'shell-pop-shell-type shell-pop-shell-type))
+#+END_SRC
+
 ** Languages
-*** JavaScript
-**** Packages
-***** [[https://github.com/mooz/js2-mode][js2-mode]]
-
-js2-mode is an improved major mode for editing JavaScript. Let's install and configure it.
-
-#+BEGIN_SRC emacs-lisp
-  (defun aj/setup-js2 ()
-    "Do configuration for js2-mode."
-    (message "Settting up js2-mode...")
-    (setq js2-basic-offset 2)
-    (setq js2-mode-indent-ignore-first-tab t)
-    (setq js2-highlight-external-variables nil)
-    (setq js2-highlight-level 3)
-    (setq js2-mirror-mode nil)
-    (setq js2-mode-show-parse-errors t)
-    (setq js2-mode-show-strict-warnings t)
-    (setq js2-pretty-multiline-declarations t)
-    (setq js2-bounce-indent-p nil))
-
-  (use-package js2-mode
-    :ensure t
-    :mode ("\\.js\\'" . js2-mode)
-    :hook (js2-mode . aj/setup-js2))
-#+END_SRC
-
-***** [[https://github.com/magnars/js2-refactor.el][js2-refactor]]
-
-#+BEGIN_SRC emacs-lisp
-  (defun aj/config--js2-refactor ()
-    "Do configuration for js2-refactor."
-    (js2r-add-keybindings-with-prefix "C-c C-r"))
-
-  (use-package js2-refactor
-    :ensure t
-    :diminish js2-refactor-mode
-    :config (aj/config--js2-refactor)
-    :init (add-hook 'js2-mode-hook #'js2-refactor-mode))
-#+END_SRC
-
-***** [[https://github.com/nicolaspetton/xref-js2][xref-js2]]
-
-#+BEGIN_SRC emacs-lisp
-  (use-package xref-js2
-    :ensure t
-    :config (define-key js-mode-map (kbd "M-.") nil))
-
-  (add-hook
-   'js2-mode-hook
-   (lambda ()
-     (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
-#+END_SRC
-
-***** [[https://github.com/proofit404/company-tern][company-tern]]
-
-#+BEGIN_SRC emacs-lisp
-  (defun aj/config--tern ()
-    "Do configuration for tern mode."
-    (add-to-list 'company-backends 'company-tern)
-    (define-key tern-mode-keymap (kbd "M-.") nil)
-    (define-key tern-mode-keymap (kbd "M-,") nil)
-    (define-key tern-mode-keymap (kbd "C-c C-r") nil))
-
-  (use-package company-tern
-    :ensure t
-    :diminish tern-mode
-    :config (aj/config--tern))
-
-  ;; (add-hook 'js2-mode-hook #'tern-mode)
-#+END_SRC
-
-***** [[https://github.com/scottaj/mocha.el][mocha]]
-
-Install and configure =mocha.el= for running mocha tests inside of emacs.
-
-#+BEGIN_SRC emacs-lisp
-  (defun aj/config--mocha ()
-    "Do configuration for `mocha.el'."
-    (setq mocha-which-node "/Users/andrewjacobson/.nvm/versions/node/v9.10.1/bin/node")
-    (setq mocha-command "node_modules/.bin/mocha")
-    (setq mocha-options "--require @babel/register --recursive --colors --reporter dot -t 5000")
-    (setq mocha-project-test-directory "test")
-    (setq mocha-environment-variables "NODE_ENV=test"))
-
-  (use-package mocha
-    :ensure t
-    :config (aj/config--mocha))
-#+END_SRC
-
-*** TypeScript
-
-Do setup for =typescript-mode= and =tide=.
-
-#+BEGIN_SRC emacs-lisp
-  (defun aj/setup-tide ()
-    "Setup TIDE."
-    (tide-setup)
-    (flycheck-mode +1)
-    (setq flycheck-check-syntax-automatically '(save mode-enabled))
-    (tide-hl-identifier-mode +1)
-    (eldoc-mode +1))
-
-  (defun aj/setup-typescript ()
-    "Setup TypeScript environment."
-    (interactive)
-    ;; (setq typescript-expr-indent-offset 2)
-    (aj/setup-tide))
-
-  (use-package typescript-mode
-    :ensure t
-    :mode (("\\.ts\\'" . typescript-mode))
-    :init
-    (use-package tide
-      :ensure t
-      :diminish
-      :hook (typescript-mode . aj/setup-typescript)))
-#+END_SRC
-
-*** Web (jsx/tsx)
-
-#+BEGIN_SRC emacs-lisp
-  (defun aj/setup-web-mode ()
-    "Add custom settings for web-mode."
-    (when (string-equal "tsx" (file-name-extension buffer-file-name))
-      (if (equal web-mode-content-type "javascript")
-          (web-mode-set-content-type "jsx"))
-      (aj/setup-typescript)
-      (flycheck-add-mode 'typescript-tslint 'web-mode))
-    (setq web-mode-markup-indent-offset 2))
-
-  (use-package web-mode
-    :ensure t
-    :mode (("\\.tsx\\'" . web-mode)
-           ("\\.jsx\\'" . web-mode))
-    :init (add-hook 'web-mode-hook 'aj/setup-web-mode))
-#+END_SRC
-
-*** Markdown
-
-Install and setup =markdown-mode=.
-
-#+BEGIN_SRC emacs-lisp
-  (use-package markdown-mode
-    :ensure t
-    :mode (
-           ;; ("README\\.md\\'" . gfm-mode) ;; github flavored version of markdown...
-           ("\\.md\\'"       . markdown-mode)
-           ("\\.markdown\\'" . markdown-mode))
-    ;; :init (setq markdown-command "multimarkdown")
-    )
-#+END_SRC
-
 *** C/C++
 **** Config
 
@@ -1319,10 +1209,10 @@ Install =counsel-etags=, a Ctags front-end built with Ivy completion.
     (add-to-list 'counsel-etags-ignore-directories '"build*")
     (add-to-list 'counsel-etags-ignore-directories '".vscode")
     (add-to-list 'counsel-etags-ignore-filenames   '".clang-format")
-    (add-to-list 'counsel-etags-ignore-directories "build_clang")
-    (add-to-list 'counsel-etags-ignore-directories "build_clang")
-    (add-to-list 'counsel-etags-ignore-filenames   "TAGS")
-    (add-to-list 'counsel-etags-ignore-filenames   "*.json")
+    (add-to-list 'counsel-etags-ignore-directories  "build_clang")
+    (add-to-list 'counsel-etags-ignore-directories  "build_clang")
+    (add-to-list 'counsel-etags-ignore-filenames    "TAGS")
+    (add-to-list 'counsel-etags-ignore-filenames    "*.json")
     (add-hook
      'prog-mode-hook
      (lambda ()
@@ -1378,16 +1268,17 @@ Install =counsel-etags=, a Ctags front-end built with Ivy completion.
   (use-package counsel-etags
     :ensure t
     :config (aj/config--counsel-etags)
-    :bind (:map c++-mode-map
-                ("M-."     . 'counsel-etags-find-tag-at-point)
-                ("C-c t"   . nil)
-                ("C-c t g" . 'counsel-etags-grep-symbol-at-point)
-                ("C-c t f" . 'counsel-etags-find-tag)
-                :map c-mode-map
-                ("M-."     . 'counsel-etags-find-tag-at-point)
-                ("C-c t"   . nil)
-                ("C-c t g" . 'counsel-etags-grep-symbol-at-point)
-                ("C-c t f" . 'counsel-etags-find-tag)))
+    ;; :bind (:map c++-mode-map
+    ;;             ("M-."     . 'counsel-etags-find-tag-at-point)
+    ;;             ("C-c t"   . nil)
+    ;;             ("C-c t g" . 'counsel-etags-grep-symbol-at-point)
+    ;;             ("C-c t f" . 'counsel-etags-find-tag)
+    ;;             :map c-mode-map
+    ;;             ("M-."     . 'counsel-etags-find-tag-at-point)
+    ;;             ("C-c t"   . nil)
+    ;;             ("C-c t g" . 'counsel-etags-grep-symbol-at-point)
+    ;;             ("C-c t f" . 'counsel-etags-find-tag))
+    )
 #+END_SRC
 
 ***** [[https://github.com/sonatard/clang-format][clang-format]]
@@ -1423,9 +1314,7 @@ Install and configure =modern-cpp-font-lock= to enable better C++ syntax highlig
 #+BEGIN_SRC emacs-lisp
   (use-package modern-cpp-font-lock
     :ensure t
-    :hook (c++-mode . modern-c++-font-lock-mode)
-    ;; :config (modern-c++-font-lock-global-mode t)
-    )
+    :hook (c++-mode . modern-c++-font-lock-mode))
 #+END_SRC
 
 ***** rtags
@@ -1446,20 +1335,39 @@ Install and configure =rtags=.
   ;;  :ensure t
   ;;  :config (aj/config--rtags))
 #+END_SRC
+*** Clojure
+**** Packages
+***** [[https://github.com/clojure-emacs/clojure-mode/][clojure-mode]]
+
+Install and configure ~clojure-mode~.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package clojure-mode
+    :ensure t)
+#+END_SRC
+
+***** [[https://github.com/clojure-emacs/cider][cider]]
+
+Install and configure (C)lojure (I)nteractive (D)evelopment (E)nvironment that (R)ocks!
+
+#+BEGIN_SRC emacs-lisp
+  (use-package cider
+    :ensure t)
+#+END_SRC
 
 *** Elixir
 **** Packages
 ***** [[https://github.com/tonini/alchemist.el][alchemist]]
 
-Install and setup =alchemist=.
+Install and setup ~alchemist~.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/config--alchemist ()
     "Do configuration for alchemist."
-    (setq alchemist-goto-elixir-source-dir "/Users/andrewjacobson/dev/elixir/")
-    (setq alchemist-goto-erlang-source-dir "/Users/andrewjacobson/dev/otp/lib/")
-    (setq alchemist-hooks-compile-on-save t)
-    (setq alchemist-hooks-test-on-save t)
+    (setq alchemist-goto-elixir-source-dir "~/dev/elixir/")
+    (setq alchemist-goto-erlang-source-dir "~/dev/otp/")
+    ;; (setq alchemist-hooks-compile-on-save t)
+    ;; (setq alchemist-hooks-test-on-save t)
     (add-hook 'elixir-mode-hook 'aj/hook--alchemist))
 
   (defun aj/hook--alchemist ()
@@ -1471,6 +1379,189 @@ Install and setup =alchemist=.
     :config (aj/config--alchemist)
     :bind (:map alchemist-mode-map
                 ("C-c a p n" . 'alchemist-project-create-file)))
+#+END_SRC
+*** Elm
+**** Packages
+***** [[https://github.com/jcollard/elm-mode][elm-mode]]
+
+Install and configure ~elm-mode~.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package f         :ensure t)
+  (use-package let-alist :ensure t)
+  (use-package s         :ensure t)
+  (use-package dash      :ensure t)
+
+  ;; (defun aj/config--elm ()
+  ;;   "Do configuration for `elm-mode'"
+  ;;   (add-to-list 'company-backends 'company-elm))
+
+  ;; (use-package elm-mode
+  ;;   :ensure t
+  ;;   :after (f let-alist s dash)
+  ;;   :config
+  ;;   (setq elm-format-on-save t)
+  ;;   ;; (add-to-list 'company-backends 'company-elm)
+  ;;   ;; (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
+  ;;   )
+
+  ;; (use-package elm-mode
+  ;;   :ensure t
+  ;;   :after (f let-alist s dash))
+
+  ;; (add-hook
+  ;;  'elm-mode-hook
+  ;;  (lambda ()
+  ;;    (setq company-backends '(company-elm))
+  ;;    (elm-oracle-setup-completion)))
+
+  ;; (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
+
+  ;; (with-eval-after-load 'company
+  ;;   (add-to-list 'company-backends 'company-elm))
+  ;; (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
+
+  ;; (add-hook 'elm-mode-hook
+  ;;           (lambda ()
+  ;;             (setq company-backends '(company-elm))))
+
+  (require 'elm-mode)
+
+  ;; (add-hook 'flycheck-mode-hook 'flycheck-elm-setup)
+  (add-hook 'elm-mode-hook
+            (lambda ()
+              (setq company-backends '(company-elm))))
+  ;;            (set (make-local-variable 'company-backends) '(company-elm))))
+
+  (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
+#+END_SRC
+*** Erlang
+**** Packages
+***** erlang-mode
+
+Install and setup ~erlang-mode~.
+
+#+BEGIN_SRC emacs-lisp
+  (defvar aj/erlang-emacs-dir "/Users/andrewjacobson/dev/erlang/lib/tools-3.0/emacs")
+  (defvar aj/erlang-root-dir "/Users/andrewjacobson/dev/erlang")
+  (defvar aj/erlang-exec-path "/Users/andrewjacobson/dev/erlang/bin")
+  (defvar aj/erlang-man-root-dir "/Users/andrewjacobson/dev/erlang/erts-10.0/man")
+
+  (setq load-path (cons aj/erlang-emacs-dir load-path))
+  (require 'erlang-start)
+
+  (setq erlang-root-dir aj/erlang-root-dir)
+  (setq exec-path (cons aj/erlang-exec-path exec-path))
+  (setq erlang-man-root-dir aj/erlang-man-root-dir)
+#+END_SRC
+
+*** JavaScript
+**** Packages
+***** [[https://github.com/mooz/js2-mode][js2-mode]]
+
+Install and configure ~js2-mode~, an improved JavaScript major mode.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/setup-js2 ()
+    "Do configuration for js2-mode."
+    (message "Settting up js2-mode...")
+    (setq js2-basic-offset 2)
+    (setq js2-mode-indent-ignore-first-tab t)
+    (setq js2-highlight-external-variables nil)
+    (setq js2-highlight-level 3)
+    (setq js2-mirror-mode nil)
+    (setq js2-mode-show-parse-errors t)
+    (setq js2-mode-show-strict-warnings t)
+    (setq js2-pretty-multiline-declarations t)
+    (setq js2-bounce-indent-p nil))
+
+  (use-package js2-mode
+    :ensure t
+    :mode ("\\.js\\'" . js2-mode)
+    :hook (js2-mode . aj/setup-js2))
+#+END_SRC
+
+***** [[https://github.com/magnars/js2-refactor.el][js2-refactor]]
+
+Install and configure ~js2-refactor~.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--js2-refactor ()
+    "Do configuration for js2-refactor."
+    (js2r-add-keybindings-with-prefix "C-c C-r"))
+
+  (use-package js2-refactor
+    :ensure t
+    :diminish js2-refactor-mode
+    :config (aj/config--js2-refactor)
+    :init (add-hook 'js2-mode-hook #'js2-refactor-mode))
+#+END_SRC
+
+***** [[https://github.com/nicolaspetton/xref-js2][xref-js2]]
+
+Install and configure ~xref-js2r~ for jump-to-definition abilities in JavaScript.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package xref-js2
+    :ensure t
+    :config (define-key js-mode-map (kbd "M-.") nil))
+
+  (add-hook
+   'js2-mode-hook
+   (lambda ()
+     (add-hook 'xref-backend-functions #'xref-js2-xref-backend nil t)))
+#+END_SRC
+
+***** [[https://github.com/proofit404/company-tern][company-tern]]
+
+Install and configure ~company-tern~ for JavaScript auto-completion.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--tern ()
+    "Do configuration for tern mode."
+    (add-to-list 'company-backends 'company-tern)
+    (define-key tern-mode-keymap (kbd "M-.") nil)
+    (define-key tern-mode-keymap (kbd "M-,") nil)
+    (define-key tern-mode-keymap (kbd "C-c C-r") nil))
+
+  (use-package company-tern
+    :ensure t
+    :diminish tern-mode
+    :config (aj/config--tern))
+
+  (add-hook 'js2-mode-hook #'tern-mode)
+#+END_SRC
+
+***** [[https://github.com/scottaj/mocha.el][mocha]]
+
+Install and configure =mocha.el= for running mocha tests inside of emacs.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--mocha ()
+    "Do configuration for `mocha.el'."
+    (setq mocha-which-node "/Users/andrewjacobson/.nvm/versions/node/v9.10.1/bin/node")
+    (setq mocha-command "node_modules/.bin/mocha")
+    (setq mocha-options "--require @babel/register --recursive --colors --reporter dot -t 5000")
+    (setq mocha-project-test-directory "test")
+    (setq mocha-environment-variables "NODE_ENV=test"))
+
+  (use-package mocha
+    :ensure t
+    :config (aj/config--mocha))
+#+END_SRC
+*** Markdown
+
+Install and setup =markdown-mode=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package markdown-mode
+    :ensure t
+    :mode (
+           ;; ("README\\.md\\'" . gfm-mode) ;; github flavored version of markdown...
+           ("\\.md\\'"       . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode))
+    ;; :init (setq markdown-command "multimarkdown")
+    )
 #+END_SRC
 
 *** Perl
@@ -1484,52 +1575,56 @@ Install and setup =alchemist=.
   ;;   :ensure t
   ;;   :config (plsense-config-default))
 #+END_SRC
+*** TypeScript
 
-*** Go
-**** Packages
-***** [[https://github.com/dominikh/go-mode.el][go-mode]]
-
-Install and configure =go-mode=.
+Do setup for =typescript-mode= and =tide=.
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/hook--go ()
-    (add-hook 'before-save-hook 'gofmt-before-save)
-    (setq gofmt-command "goimports")
-    (if (not (string-match "go" compile-command))
-        (set (make-local-variable 'compile-command)
-             "go build -v && go test -v && go vet"))
-    (go-guru-hl-identifier-mode))
+  (defun aj/setup-tide ()
+    "Setup TIDE."
+    (tide-setup)
+    (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    (tide-hl-identifier-mode +1)
+    (eldoc-mode +1))
 
-  (use-package go-mode
+  (defun aj/setup-typescript ()
+    "Setup TypeScript environment."
+    (interactive)
+    ;; (setq typescript-expr-indent-offset 2)
+    (ycmd-mode nil)
+    (aj/setup-tide))
+
+  (use-package typescript-mode
     :ensure t
-    :hook (go-mode . aj/hook--go)
-    :bind (:map go-mode-map
-           ("M-."   . godef-jump)
-           ("M-,"   . pop-tag-mark)
-           ("C-x P" . compile)
-           ("C-x p" . recompile)
-           ("M-]"   . next-error)
-           ("M-["   . previous-error))
-    :mode "\\.go\\'")
+    :mode (("\\.ts\\'" . typescript-mode))
+    :init
+    (use-package tide
+      :ensure t
+      :diminish
+      :hook (typescript-mode . aj/setup-typescript)))
 #+END_SRC
 
-***** go-guru
+*** Web
+
+Install and configure ~web-mode~, a major mode for editing various "web" templates.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package go-guru :ensure t)
-#+END_SRC
+  (defun aj/setup-web-mode ()
+    "Add custom settings for web-mode."
+    (when (string-equal "tsx" (file-name-extension buffer-file-name))
+      (if (equal web-mode-content-type "javascript")
+          (web-mode-set-content-type "jsx"))
+      (aj/setup-typescript)
+      (flycheck-add-mode 'typescript-tslint 'web-mode))
+    (setq web-mode-markup-indent-offset 2))
 
-***** company-go
-
-Install and configure =company-go=.
-
-#+BEGIN_SRC emacs-lisp
-  (use-package company-go :ensure t)
-
-  (add-hook
-   'go-mode-hook
-   (lambda ()
-     (set (make-local-variable 'company-backends) '(company-go))))
+  (use-package web-mode
+    :ensure t
+    :mode (("\\.tsx\\'" . web-mode)  ;; TypeScript JSX
+           ("\\.jsx\\'" . web-mode)  ;; JSX
+           ("\\.eex\\'" . web-mode)) ;; Embedded Elixir templates
+    :init (add-hook 'web-mode-hook 'aj/setup-web-mode))
 #+END_SRC
 
 * Misc
@@ -1559,7 +1654,7 @@ is exactly what I need :)
 
 ** IRC
 
-Function for logging onto irc.
+Function for logging into the freenode irc.
 
 #+BEGIN_SRC emacs-lisp
   (defun aj/irc (&optional server port nick)
@@ -1573,8 +1668,10 @@ Function for logging onto irc.
 #+END_SRC
 
 * TODOS
+** TODO Finish configuring ~erlan-mode~.
+** TODO Finish configuring ~elm-mode~.
 ** TODO Move global keybindings to their own respective sections.
 ** TODO Learn about [[https://github.com/abo-abo/hydra][hydras]] and [[https://www.emacswiki.org/emacs/KeyChord][key chords]] and see if they can be incorporated.
 ** TODO In general, better keybinding patterns/namespaces would be good.
 ** TODO Finish implementing [[https://nilsdeppe.com/posts/emacs-c++-ide2][these]] C/C++ IDE configurations
-** TODO Also found [[https://nilsdeppe.com/posts/emacs-c++-ide2][here]], try running Emacs as a server (deamon) and using =emacsclient= for a quicker startup (potentially)
+** DONE Also found [[https://nilsdeppe.com/posts/emacs-c++-ide2][here]], try running Emacs as a server (deamon) and using ~emacsclient~ for a quicker startup (potentially)
