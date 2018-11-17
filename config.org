@@ -169,7 +169,12 @@ of this file.
 Setup ~load-path~.
 
 #+BEGIN_SRC emacs-lisp
-  (add-to-list 'load-path "~/.emacs.d/vendor/")
+  (defun aj/expand-file-name-in-emacs-dir (name)
+    "Expands NAME to an absolute path inside the `user-emacs-directory'."
+    (expand-file-name name user-emacs-directory))
+
+  (add-to-list 'load-path (aj/expand-file-name-in-emacs-dir "vendor"))
+  (add-to-list 'load-path (aj/expand-file-name-in-emacs-dir "etc"))
 #+END_SRC
 
 ** Remove annoying UI
@@ -203,9 +208,6 @@ Settings for Darwin.
 #+END_SRC
 
 * Functions
-
-A place to put custom functions.
-
 ** force-save
 
 Function to save buffer, even when it has not been modified.
