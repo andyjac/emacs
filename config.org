@@ -8,6 +8,8 @@ This is my Emacs config. There are many like it, but this one is mine.
 
 * Personal Info
 
+~whoami~.
+
 #+BEGIN_SRC emacs-lisp
   (setq user-full-name "Andrew Jacobson"
         user-mail-address "andrew.isaac.jacobson@gmail.com")
@@ -22,7 +24,7 @@ Load the auto-generated ~custom.el~ file from the dotemacs directory.
   (load custom-file)
 #+END_SRC
 
-* Basic Configuration
+* Sane Defaults
 ** Require newline at EOF
 
 Setting ~require-final-newline~ to ~t~ tells emacs to add a newline
@@ -105,7 +107,9 @@ Shhhh.
   (setq ring-bell-function 'ignore)
 #+END_SRC
 
-** Show column info
+** Show column number
+
+Show the current column number in the mode line.
 
 #+BEGIN_SRC emacs-lisp
   (column-number-mode t)
@@ -113,7 +117,7 @@ Shhhh.
 
 ** Display line numbers
 
-Turn on linum mode globally.
+Turn on ~linum-mode~ globally.
 
 #+BEGIN_SRC emacs-lisp
   (global-linum-mode)
@@ -170,15 +174,17 @@ Setup ~load-path~.
 
 ** Remove annoying UI
 
+Goodbye, annoying UI.
+
 #+BEGIN_SRC emacs-lisp
   (menu-bar-mode -1)
   (tool-bar-mode -1)
   (scroll-bar-mode -1)
 #+END_SRC
 
-* Mac
+* Darwin
 
-Settings for MacOS.
+Settings for Darwin.
 
 #+BEGIN_SRC emacs-lisp
   (when (string-equal system-type 'darwin)
@@ -197,6 +203,9 @@ Settings for MacOS.
 #+END_SRC
 
 * Functions
+
+A place to put custom functions.
+
 ** force-save
 
 Function to save buffer, even when it has not been modified.
@@ -352,7 +361,7 @@ Should maybe try out some other fonts too...
   ;; gruvbox themes
   (use-package gruvbox-theme
     :ensure t
-    :config (load-theme 'gruvbox-dark-hard))
+    :config (load-theme 'gruvbox-dark-medium))
 #+END_SRC
 
 * Editing & Movement
@@ -778,6 +787,15 @@ Install ~which-key~ for incremental keystroke discoverability.
 
 * Completion
 ** Packages
+*** [[https://github.com/auto-complete/auto-complete][auto-complete]]
+
+Install and configure ~auto-complete~.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package auto-complete
+    :ensure t)
+#+END_SRC
+
 *** [[https://www.emacswiki.org/emacs/ElDoc][eldoc]]
 
 #+BEGIN_SRC emacs-lisp
@@ -791,7 +809,7 @@ Install ~which-key~ for incremental keystroke discoverability.
 Install and configure ~ycmd~ for completion.
 
 #+BEGIN_SRC emacs-lisp
-  (defvar aj/ycmd-server-command '("python" "-u" "/Users/andrewjacobson/.emacs.d/vendor/ycmd/ycmd"))
+  (defvar aj/ycmd-server-command '("python3" "-u" "/Users/andrewjacobson/dev/ycmd/ycmd"))
   (defvar aj/ycmd-extra-conf-whitelist '("~/.ycm_conf.py"))
   (defvar aj/ycmd-global-config "~/.ycm_conf.py")
   (defvar aj/python-location (executable-find (nth 0 aj/ycmd-server-command)))
@@ -815,6 +833,7 @@ Install and configure ~ycmd~ for completion.
     (set-variable 'ycmd-global-config aj/ycmd-global-config)
     (setq ycmd-request-msg-level -1)
     (setq ycmd-force-semantic-completion t)
+    (setq ycmd-startup-timeout 10)
     (require 'ycmd-eldoc)
     (add-hook 'ycmd-mode-hook 'ycmd-eldoc-setup)
     (add-hook 'c-mode-hook 'ycmd-mode)
@@ -902,7 +921,8 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
           backend
         (append (if (consp backend) backend (list backend))
                 '(:with company-yasnippet))))
-    :bind (("C-c <tab>" . company-complete))
+    :bind (("C-c <tab>" . company-complete)
+           ("C-c c f"   . company-filter-candidates))
     :init (global-company-mode t)
     :config (aj/config--company))
 #+END_SRC
@@ -912,7 +932,8 @@ Install, configure and enable [[http://company-mode.github.io/][company]] global
 #+BEGIN_SRC emacs-lisp
   (defun aj/config--company-ycmd ()
     "Do configuration for company-ycmd"
-    (push '(company-ycmd :with company-yasnippet company-dabbrev-code) company-backends))
+    ;; (push '(company-ycmd :with company-yasnippet company-dabbrev-code) company-backends)
+    (push '(company-ycmd) company-backends))
 
   (use-package company-ycmd
     :ensure t
@@ -999,7 +1020,20 @@ Magit is an amazing git porcelain! Let's install it and set it up.
   (use-package magit
     :ensure t
     :config (aj/config--magit)
-    :bind (("M-j g" . magit-status)))
+    :bind (("M-j g"   . magit-status)
+           ("C-c m"   . nil)
+           ("C-c m b" . magit-blame)
+           ("C-c m B" . magit-blame-popup)))
+#+END_SRC
+
+**** git-timemachine
+
+~git-timemachine~ is a useful package for stepping between different ~git~ versions
+of a specific file.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package git-timemachine
+    :ensure t)
 #+END_SRC
 
 **** [[https://github.com/tsdh/highlight-parentheses.el][highlight-parentheses]]
@@ -1442,17 +1476,146 @@ Install and configure ~elm-mode~.
 Install and setup ~erlang-mode~.
 
 #+BEGIN_SRC emacs-lisp
-  (defvar aj/erlang-emacs-dir "/Users/andrewjacobson/dev/erlang/lib/tools-3.0/emacs")
-  (defvar aj/erlang-root-dir "/Users/andrewjacobson/dev/erlang")
-  (defvar aj/erlang-exec-path "/Users/andrewjacobson/dev/erlang/bin")
-  (defvar aj/erlang-man-root-dir "/Users/andrewjacobson/dev/erlang/erts-10.0/man")
+  (defvar aj/erlang-emacs-dir "/Users/andrewjacobson/.erlangs/21.1/lib/tools-3.0.1/emacs")
+  (defvar aj/erlang-root-dir "/Users/andrewjacobson/.erlangs/21.1")
+  (defvar aj/erlang-exec-path "/Users/andrewjacobson/.erlangs/21.1/bin")
+  (defvar aj/erlang-man-root-dir "/Users/andrewjacobson/.erlangs/21.1/man")
 
   (setq load-path (cons aj/erlang-emacs-dir load-path))
-  (require 'erlang-start)
-
   (setq erlang-root-dir aj/erlang-root-dir)
   (setq exec-path (cons aj/erlang-exec-path exec-path))
   (setq erlang-man-root-dir aj/erlang-man-root-dir)
+
+  (require 'erlang-start)
+#+END_SRC
+
+***** [[https://github.com/massemanet/distel][distel]]
+
+Install and configure ~distel~ Erlang IDE.
+
+#+BEGIN_SRC emacs-lisp
+  ;; from: https://www.lambdacat.com/post-modern-emacs-setup-for-erlang/
+  (push "~/.emacs.d/vendor/distel/elisp/" load-path)
+  (require 'distel)
+  (distel-setup)
+
+  ;; prevent annoying hang-on-compile
+  (defvar inferior-erlang-prompt-timeout t)
+  ;; default node name to emacs@localhost
+  (setq inferior-erlang-machine-options '("-sname" "emacs"))
+  ;; tell distel to default to that node
+  (setq erl-nodename-cache
+        (make-symbol
+         (concat
+          "emacs@"
+          ;; Mac OS X uses "name.local" instead of "name", this should work
+          ;; pretty much anywhere without having to muck with NetInfo
+          ;; ... but I only tested it on Mac OS X.
+          (car (split-string (shell-command-to-string "hostname"))))))
+#+END_SRC
+
+***** [[https://github.com/sebastiw/distel-completion][company-distel]]
+
+Install and configure ~company-distel~ for auto-completion.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/config--company-distel ()
+    "Do configuration for `company-distel'."
+    (add-to-list 'company-backends 'company-distel))
+
+  (use-package company-distel
+    :ensure t
+    :after (distel company)
+    :config (aj/config--company-distel))
+#+END_SRC
+
+***** flycheck
+
+Configure ~flycheck~ for ~erlang-otp~.
+
+#+BEGIN_SRC emacs-lisp
+  (flycheck-define-checker erlang-otp
+    "An Erlang syntax checker using the Erlang interpreter."
+    :command ("erlc" "-o" temporary-directory "-Wall"
+              "-I" "../include" "-I" "../../include"
+              "-I" "../../../include" source)
+    :error-patterns
+    ((warning line-start (file-name) ":" line ": Warning:" (message) line-end)
+     (error line-start (file-name) ":" line ": " (message) line-end))
+    :modes (erlang-mode))
+
+  (add-to-list 'flycheck-checkers 'erlang-otp)
+#+END_SRC
+
+*** Go
+**** Packages
+***** [[https://github.com/dominikh/go-mode.el][go-mode]]
+
+Install and configure ~go-mode~.
+
+#+BEGIN_SRC emacs-lisp
+  (defun aj/hook--go ()
+    "`go-mode' hook."
+    (add-hook 'before-save-hook 'gofmt-before-save)
+    (go-eldoc-setup)
+    (go-guru-hl-identifier-mode)
+    (setq gofmt-command "goimports")
+    (if (not (string-match "go" compile-command))
+        (set (make-local-variable 'compile-command)
+             "go build -v && go test -v && go vet")))
+
+  (defun aj/config--go ()
+    "Do configuration for `go-mode'."
+    (add-to-list 'company-backends 'company-go))
+
+  (use-package go-mode
+    :ensure t
+    :after (company-go go-eldoc)
+    :hook (go-mode . aj/hook--go)
+    :config (aj/config--go)
+    :bind (:map go-mode-map
+                ("M-." . godef-jump)
+                ("M-," . pop-tag-mark)
+                ("M-p" . compile)
+                ("M-P" . recompile)
+                ("M-]" . next-error)
+                ("M-[" . previous-error)))
+#+END_SRC
+
+***** company-go
+
+Install and configure ~company-go~.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package company-go
+    :ensure t)
+#+END_SRC
+
+***** [[https://github.com/syohex/emacs-go-eldoc][go-eldoc]]
+
+Install and configure ~go-eldoc~.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package go-eldoc
+    :ensure t)
+#+END_SRC
+
+***** go-guru
+
+Install and configure ~go-guru~.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package go-guru
+    :ensure t)
+#+END_SRC
+
+***** [[https://github.com/grafov/go-playground][go-playground]]
+
+Install ~go-playground~, a simple golang REPL inside Emacs.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package go-playground
+    :ensure t)
 #+END_SRC
 
 *** JavaScript
@@ -1667,11 +1830,22 @@ Function for logging into the freenode irc.
      :nick   (or nick   "andyjac")))
 #+END_SRC
 
+** Internet
+*** Packages
+**** w3m
+
+Install ~w3m~, the text-based web-browser.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package w3m
+    :ensure t)
+#+END_SRC
+
 * TODOS
-** TODO Finish configuring ~erlan-mode~.
-** TODO Finish configuring ~elm-mode~.
-** TODO Move global keybindings to their own respective sections.
-** TODO Learn about [[https://github.com/abo-abo/hydra][hydras]] and [[https://www.emacswiki.org/emacs/KeyChord][key chords]] and see if they can be incorporated.
-** TODO In general, better keybinding patterns/namespaces would be good.
-** TODO Finish implementing [[https://nilsdeppe.com/posts/emacs-c++-ide2][these]] C/C++ IDE configurations
-** DONE Also found [[https://nilsdeppe.com/posts/emacs-c++-ide2][here]], try running Emacs as a server (deamon) and using ~emacsclient~ for a quicker startup (potentially)
+** DONE [P2] Finish configuring ~erlang-mode~.
+** TODO [P3] Finish configuring ~elm-mode~.
+** TODO [P2] Move global keybindings to their own respective sections.
+** TODO [P3] Learn about [[https://github.com/abo-abo/hydra][hydras]] and [[https://www.emacswiki.org/emacs/KeyChord][key chords]] and see if they can be incorporated.
+** TODO [P1] In general, better keybinding patterns/namespaces would be good.
+** TODO [P2] Finish implementing [[https://nilsdeppe.com/posts/emacs-c++-ide2][these]] C/C++ IDE configurations
+** DONE [P2] Also found [[https://nilsdeppe.com/posts/emacs-c++-ide2][here]], try running Emacs as a server (deamon) and using ~emacsclient~ for a quicker startup (potentially)

@@ -19,6 +19,8 @@
         dired-mark
         end-of-visual-line
         forward-to-word
+        ibuffer-mark-for-delete
+        ibuffer-mark-forward
         indent-and-open-newline
         indent-for-tab-command
         ivy-occur-delete-candidate

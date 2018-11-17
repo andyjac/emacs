@@ -1,6 +1,7 @@
 auto-save-list/
 backups/
 elpa/
+vendor/
 *~
 ac-comphist.dat
 config.el
