@@ -1,0 +1,6 @@
+[submodule "git/ycmd"]
+	path = git/ycmd
+	url = git@github.com:Valloric/ycmd.git
+[submodule "git/distel"]
+	path = git/distel
+	url = git@github.com:massemanet/distel.git

@@ -33,6 +33,7 @@
         sp-backward-kill-word
         sp-delete-char
         sp-forward-sexp
+        sp-forward-slurp-sexp
         sp-kill-hybrid-sexp
         sp-splice-sexp
         typescript-insert-and-indent

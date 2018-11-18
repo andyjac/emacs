@@ -173,8 +173,9 @@ Setup ~load-path~.
     "Expands NAME to an absolute path inside the `user-emacs-directory'."
     (expand-file-name name user-emacs-directory))
 
-  (add-to-list 'load-path (aj/expand-file-name-in-emacs-dir "vendor"))
+  (add-to-list 'load-path (aj/expand-file-name-in-emacs-dir "git"))
   (add-to-list 'load-path (aj/expand-file-name-in-emacs-dir "etc"))
+  ;; (add-to-list 'load-path (aj/expand-file-name-in-emacs-dir "git/distel/elisp/"))
 #+END_SRC
 
 ** Remove annoying UI
@@ -664,7 +665,7 @@ Setup ~dired-mode-hook~.
 
 * Package
 
-Useful function for marking a single package for upgrade ([[https:www.reddit.com/r/emacs/comments/6thg6j/command_to_mark_single_packages_for_upgrade/][Source]]).
+Useful function for marking a single package for upgrade ([[https:www.reddit.com/r/emacs/comments/6thg6j/command_to_mark_single_packages_for_upgrade/][source]]).
 
 #+BEGIN_SRC emacs-lisp
   (defun package-menu-upgrade-package ()
@@ -1478,26 +1479,20 @@ Install and configure ~elm-mode~.
 Install and setup ~erlang-mode~.
 
 #+BEGIN_SRC emacs-lisp
-  (defvar aj/erlang-emacs-dir "/Users/andrewjacobson/.erlangs/21.1/lib/tools-3.0.1/emacs")
-  (defvar aj/erlang-root-dir "/Users/andrewjacobson/.erlangs/21.1")
-  (defvar aj/erlang-exec-path "/Users/andrewjacobson/.erlangs/21.1/bin")
-  (defvar aj/erlang-man-root-dir "/Users/andrewjacobson/.erlangs/21.1/man")
+  (defvar aj/erlang-emacs-dir    (expand-file-name "~/.erlangs/21.1/lib/tools-3.0.1/emacs/"))
+  (defvar aj/erlang-root-dir     (expand-file-name "~/.erlangs/21.1"))
+  (defvar aj/erlang-exec-path    (expand-file-name "~/.erlangs/21.1/bin"))
+  (defvar aj/erlang-man-root-dir (expand-file-name "~/.erlangs/21.1/man"))
 
-  (setq load-path (cons aj/erlang-emacs-dir load-path))
+  (add-to-list 'load-path aj/erlang-emacs-dir)
+
   (setq erlang-root-dir aj/erlang-root-dir)
   (setq exec-path (cons aj/erlang-exec-path exec-path))
   (setq erlang-man-root-dir aj/erlang-man-root-dir)
 
   (require 'erlang-start)
-#+END_SRC
 
-***** [[https://github.com/massemanet/distel][distel]]
-
-Install and configure ~distel~ Erlang IDE.
-
-#+BEGIN_SRC emacs-lisp
-  ;; from: https://www.lambdacat.com/post-modern-emacs-setup-for-erlang/
-  (push "~/.emacs.d/vendor/distel/elisp/" load-path)
+  (add-to-list 'load-path "~/.emacs.d/git/distel/elisp/")
   (require 'distel)
   (distel-setup)
 
@@ -1516,19 +1511,46 @@ Install and configure ~distel~ Erlang IDE.
           (car (split-string (shell-command-to-string "hostname"))))))
 #+END_SRC
 
+***** [[https://github.com/massemanet/distel][distel]]
+
+Install and configure ~distel~ Erlang IDE.
+
+#+BEGIN_SRC emacs-lisp
+  ;; ;; from: https://www.lambdacat.com/post-modern-emacs-setup-for-erlang/
+  ;; (add-to-list 'load-path "/Users/andrewjacobson/.erlangs/21.1/lib/tools-3.0.1/emacs")
+  ;; (add-to-list 'load-path "~/.emacs.d/git/distel/elisp/")
+  ;; ;; (push "~/.emacs.d/git/distel/elisp/" load-path)
+  ;; (require 'distel)
+  ;; (distel-setup)
+
+  ;; ;; prevent annoying hang-on-compile
+  ;; (defvar inferior-erlang-prompt-timeout t)
+  ;; ;; default node name to emacs@localhost
+  ;; (setq inferior-erlang-machine-options '("-sname" "emacs"))
+  ;; ;; tell distel to default to that node
+  ;; (setq erl-nodename-cache
+  ;;       (make-symbol
+  ;;        (concat
+  ;;         "emacs@"
+  ;;         ;; Mac OS X uses "name.local" instead of "name", this should work
+  ;;         ;; pretty much anywhere without having to muck with NetInfo
+  ;;         ;; ... but I only tested it on Mac OS X.
+  ;;         (car (split-string (shell-command-to-string "hostname"))))))
+#+END_SRC
+
 ***** [[https://github.com/sebastiw/distel-completion][company-distel]]
 
 Install and configure ~company-distel~ for auto-completion.
 
 #+BEGIN_SRC emacs-lisp
-  (defun aj/config--company-distel ()
-    "Do configuration for `company-distel'."
-    (add-to-list 'company-backends 'company-distel))
+  ;; (defun aj/config--company-distel ()
+  ;;   "Do configuration for `company-distel'."
+  ;;   (add-to-list 'company-backends 'company-distel))
 
-  (use-package company-distel
-    :ensure t
-    :after (distel company)
-    :config (aj/config--company-distel))
+  ;; (use-package company-distel
+  ;;   :ensure t
+  ;;   :after (distel company)
+  ;;   :config (aj/config--company-distel))
 #+END_SRC
 
 ***** flycheck
@@ -1536,17 +1558,17 @@ Install and configure ~company-distel~ for auto-completion.
 Configure ~flycheck~ for ~erlang-otp~.
 
 #+BEGIN_SRC emacs-lisp
-  (flycheck-define-checker erlang-otp
-    "An Erlang syntax checker using the Erlang interpreter."
-    :command ("erlc" "-o" temporary-directory "-Wall"
-              "-I" "../include" "-I" "../../include"
-              "-I" "../../../include" source)
-    :error-patterns
-    ((warning line-start (file-name) ":" line ": Warning:" (message) line-end)
-     (error line-start (file-name) ":" line ": " (message) line-end))
-    :modes (erlang-mode))
+  ;; (flycheck-define-checker erlang-otp
+  ;;   "An Erlang syntax checker using the Erlang interpreter."
+  ;;   :command ("erlc" "-o" temporary-directory "-Wall"
+  ;;             "-I" "../include" "-I" "../../include"
+  ;;             "-I" "../../../include" source)
+  ;;   :error-patterns
+  ;;   ((warning line-start (file-name) ":" line ": Warning:" (message) line-end)
+  ;;    (error line-start (file-name) ":" line ": " (message) line-end))
+  ;;   :modes (erlang-mode))
 
-  (add-to-list 'flycheck-checkers 'erlang-otp)
+  ;; (add-to-list 'flycheck-checkers 'erlang-otp)
 #+END_SRC
 
 *** Go
